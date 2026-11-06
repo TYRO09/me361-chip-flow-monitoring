@@ -1,0 +1,12 @@
+model,loo_rmse,loo_mae
+Linear: f + ap + rpm (confounded),4.63,3.89
+Random forest,6.5,5.62
+Linear: f + ap,6.56,5.8
+"Ridge: f, ap, f·ap",7.01,5.93
+k-nearest neighbours (k=2),7.58,6.43
+Quadratic ridge,7.86,6.67
+Constant (baseline),7.94,6.48
+Linear: chip area + h_eq,8.05,6.74
+Physics: Colwell η only,8.75,7.75
+Physics hybrid: Colwell η + curl(h),9.16,7.87
+Gaussian process (RBF),9.29,8.57

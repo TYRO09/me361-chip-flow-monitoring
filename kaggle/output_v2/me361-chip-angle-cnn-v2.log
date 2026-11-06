@@ -1,0 +1,62 @@
+[{"stream_name":"stdout","time":18.273712725,"data":"device: cuda Tesla T4\n"}
+,{"stream_name":"stdout","time":191.335641348,"data":"inputs ready {'rgb_finetune': (2336, 224, 224, 3), 'motion': (2336, 224, 224, 3), 'masked_rgb': (2336, 224, 224, 3)} mean moving fraction 0.6726508736610413\n"}
+,{"stream_name":"stdout","time":191.345828671,"data":"=== variant motion\n"}
+,{"stream_name":"stdout","time":191.517851839,"data":"Downloading: \"https://download.pytorch.org/models/resnet18-f37072fd.pth\" to /root/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth\n"}
+,{"stream_name":"stderr","time":191.973505844,"data":"\r  0%|          | 0.00/44.7M [00:00\u003c?, ?B/s]\r 15%|█▍        | 6.62M/44.7M [00:00\u003c00:00, 69.4MB/s]\r 55%|█████▌    | 24.8M/44.7M [00:00\u003c00:00, 140MB/s] \r100%|██████████| 44.7M/44.7M [00:00\u003c00:00, 163MB/s]\n"}
+,{"stream_name":"stdout","time":228.619161338,"data":"   last-epoch loss 0.0329\n"}
+,{"stream_name":"stdout","time":229.891199688,"data":"   {'run': 'R1', 'n': 690, 'true': 52.45, 'pred': 54.78, 'base': 48.08, 'mae': 6.3, 'mae_base': 6.77, 'feed_acc': 0.24}\n"}
+,{"stream_name":"stdout","time":272.796135561,"data":"   last-epoch loss 0.0302\n"}
+,{"stream_name":"stdout","time":273.471140654,"data":"   {'run': 'R2', 'n': 241, 'true': 64.0, 'pred': 51.9, 'base': 47.69, 'mae': 12.09, 'mae_base': 16.31, 'feed_acc': 0.02}\n"}
+,{"stream_name":"stdout","time":314.97417738,"data":"   last-epoch loss 0.0313\n"}
+,{"stream_name":"stdout","time":316.01344654,"data":"   {'run': 'R3', 'n': 499, 'true': 41.71, 'pred': 49.03, 'base': 51.45, 'mae': 9.01, 'mae_base': 11.24, 'feed_acc': 0.41}\n"}
+,{"stream_name":"stdout","time":364.059682354,"data":"   last-epoch loss 0.0263\n"}
+,{"stream_name":"stdout","time":364.785978899,"data":"   {'run': 'R4', 'n': 253, 'true': 52.92, 'pred': 50.68, 'base': 48.94, 'mae': 8.28, 'mae_base': 7.67, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":408.221764904,"data":"   last-epoch loss 0.0307\n"}
+,{"stream_name":"stdout","time":409.191987018,"data":"   {'run': 'R5', 'n': 418, 'true': 43.24, 'pred': 48.74, 'base': 50.71, 'mae': 7.26, 'mae_base': 9.58, 'feed_acc': 0.45}\n"}
+,{"stream_name":"stdout","time":457.044149847,"data":"   last-epoch loss 0.0296\n"}
+,{"stream_name":"stdout","time":457.728042738,"data":"   {'run': 'R6', 'n': 235, 'true': 48.68, 'pred': 42.85, 'base': 49.45, 'mae': 6.82, 'mae_base': 4.83, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":457.731748938,"data":"motion {'run_rmse': 6.762, 'run_rmse_baseline': 8.679, 'frame_mae': 7.915, 'frame_mae_baseline': 9.112, 'feed_acc': 0.242, 'feed_runs_correct': 0} 4.4 min\n"}
+,{"stream_name":"stdout","time":457.731771695,"data":"=== variant masked_rgb\n"}
+,{"stream_name":"stdout","time":495.258005929,"data":"   last-epoch loss 0.0353\n"}
+,{"stream_name":"stdout","time":496.547551015,"data":"   {'run': 'R1', 'n': 690, 'true': 52.45, 'pred': 53.75, 'base': 48.08, 'mae': 6.51, 'mae_base': 6.77, 'feed_acc': 0.02}\n"}
+,{"stream_name":"stdout","time":544.255436289,"data":"   last-epoch loss 0.0326\n"}
+,{"stream_name":"stdout","time":544.977781796,"data":"   {'run': 'R2', 'n': 241, 'true': 64.0, 'pred': 49.76, 'base': 47.69, 'mae': 14.24, 'mae_base': 16.31, 'feed_acc': 0.2}\n"}
+,{"stream_name":"stdout","time":586.966241572,"data":"   last-epoch loss 0.0279\n"}
+,{"stream_name":"stdout","time":588.039170718,"data":"   {'run': 'R3', 'n': 499, 'true': 41.71, 'pred': 49.14, 'base': 51.45, 'mae': 9.14, 'mae_base': 11.24, 'feed_acc': 0.35}\n"}
+,{"stream_name":"stdout","time":635.511864881,"data":"   last-epoch loss 0.0319\n"}
+,{"stream_name":"stdout","time":636.196098405,"data":"   {'run': 'R4', 'n': 253, 'true': 52.92, 'pred': 48.71, 'base': 48.94, 'mae': 8.62, 'mae_base': 7.67, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":679.460209982,"data":"   last-epoch loss 0.0306\n"}
+,{"stream_name":"stdout","time":680.412204544,"data":"   {'run': 'R5', 'n': 418, 'true': 43.24, 'pred': 48.61, 'base': 50.71, 'mae': 7.92, 'mae_base': 9.58, 'feed_acc': 0.39}\n"}
+,{"stream_name":"stdout","time":728.13677461,"data":"   last-epoch loss 0.0321\n"}
+,{"stream_name":"stdout","time":728.852901285,"data":"   {'run': 'R6', 'n': 235, 'true': 48.68, 'pred': 44.5, 'base': 49.45, 'mae': 6.11, 'mae_base': 4.83, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":728.856633634,"data":"masked_rgb {'run_rmse': 7.343, 'run_rmse_baseline': 8.679, 'frame_mae': 8.309, 'frame_mae_baseline': 9.112, 'feed_acc': 0.171, 'feed_runs_correct': 0} 9.0 min\n"}
+,{"stream_name":"stdout","time":728.856651243,"data":"=== variant rgb_finetune\n"}
+,{"stream_name":"stdout","time":766.423007201,"data":"   last-epoch loss 0.0416\n"}
+,{"stream_name":"stdout","time":767.722131548,"data":"   {'run': 'R1', 'n': 690, 'true': 52.45, 'pred': 54.42, 'base': 48.08, 'mae': 6.2, 'mae_base': 6.77, 'feed_acc': 0.09}\n"}
+,{"stream_name":"stdout","time":815.573291921,"data":"   last-epoch loss 0.0370\n"}
+,{"stream_name":"stdout","time":816.300514006,"data":"   {'run': 'R2', 'n': 241, 'true': 64.0, 'pred': 46.75, 'base': 47.69, 'mae': 17.25, 'mae_base': 16.31, 'feed_acc': 0.1}\n"}
+,{"stream_name":"stdout","time":858.202847242,"data":"   last-epoch loss 0.0310\n"}
+,{"stream_name":"stdout","time":859.280084779,"data":"   {'run': 'R3', 'n': 499, 'true': 41.71, 'pred': 48.84, 'base': 51.45, 'mae': 8.67, 'mae_base': 11.24, 'feed_acc': 0.18}\n"}
+,{"stream_name":"stdout","time":906.883509629,"data":"   last-epoch loss 0.0341\n"}
+,{"stream_name":"stdout","time":907.608015571,"data":"   {'run': 'R4', 'n': 253, 'true': 52.92, 'pred': 48.23, 'base': 48.94, 'mae': 8.67, 'mae_base': 7.67, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":951.030417998,"data":"   last-epoch loss 0.0399\n"}
+,{"stream_name":"stdout","time":952.002708379,"data":"   {'run': 'R5', 'n': 418, 'true': 43.24, 'pred': 52.52, 'base': 50.71, 'mae': 10.68, 'mae_base': 9.58, 'feed_acc': 0.07}\n"}
+,{"stream_name":"stdout","time":999.942252186,"data":"   last-epoch loss 0.0365\n"}
+,{"stream_name":"stdout","time":1000.665704387,"data":"   {'run': 'R6', 'n': 235, 'true': 48.68, 'pred': 45.89, 'base': 49.45, 'mae': 5.12, 'mae_base': 4.83, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":1000.669400924,"data":"rgb_finetune {'run_rmse': 8.832, 'run_rmse_baseline': 8.679, 'frame_mae': 8.828, 'frame_mae_baseline': 9.112, 'feed_acc': 0.089, 'feed_runs_correct': 0} 13.5 min\n"}
+,{"stream_name":"stdout","time":1000.669417054,"data":"=== variant linear_probe\n"}
+,{"stream_name":"stdout","time":1005.233269372,"data":"   {'run': 'R1', 'n': 690, 'true': 52.45, 'pred': 54.98, 'base': 48.08, 'mae': 6.54, 'mae_base': 6.77, 'feed_acc': 0.27}\n"}
+,{"stream_name":"stdout","time":1006.662831887,"data":"   {'run': 'R2', 'n': 241, 'true': 64.0, 'pred': 47.86, 'base': 47.69, 'mae': 16.15, 'mae_base': 16.31, 'feed_acc': 0.11}\n"}
+,{"stream_name":"stdout","time":1007.714148031,"data":"   {'run': 'R3', 'n': 499, 'true': 41.71, 'pred': 46.48, 'base': 51.45, 'mae': 7.98, 'mae_base': 11.24, 'feed_acc': 0.42}\n"}
+,{"stream_name":"stdout","time":1009.116755634,"data":"   {'run': 'R4', 'n': 253, 'true': 52.92, 'pred': 48.44, 'base': 48.94, 'mae': 9.72, 'mae_base': 7.67, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":1010.21930226,"data":"   {'run': 'R5', 'n': 418, 'true': 43.24, 'pred': 48.46, 'base': 50.71, 'mae': 7.07, 'mae_base': 9.58, 'feed_acc': 0.43}\n"}
+,{"stream_name":"stdout","time":1011.552281603,"data":"   {'run': 'R6', 'n': 235, 'true': 48.68, 'pred': 43.53, 'base': 49.45, 'mae': 6.37, 'mae_base': 4.83, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":1011.559178774,"data":"linear_probe {'run_rmse': 7.779, 'run_rmse_baseline': 8.679, 'frame_mae': 8.263, 'frame_mae_baseline': 9.112, 'feed_acc': 0.259, 'feed_runs_correct': 0} 13.7 min\n"}
+,{"stream_name":"stdout","time":1011.708190687,"data":"done\n"}
+,{"stream_name":"stderr","time":1019.771607593,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":1019.771637045,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":1020.061189801,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":1020.061219413,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":1020.918300953,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":1021.978612907,"data":"[NbConvertApp] Writing 325606 bytes to __results__.html\n"}
+]

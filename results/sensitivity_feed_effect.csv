@@ -1,0 +1,4 @@
+,"base (r=220 px, thr=18)",annulus r=150 px,annulus r=300 px,motion thr=12,motion thr=28,estimator: weighted mean,estimator: streak orientation
+R2-R1,10.1,14.9,6.2,10.5,10.5,13.0,14.3
+R4-R3,8.4,9.3,5.5,9.2,7.8,4.8,-4.6
+R6-R5,2.7,3.6,0.3,2.7,2.7,2.3,-4.0

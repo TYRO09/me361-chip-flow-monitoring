@@ -1,0 +1,11 @@
+# raw recordings: too large for GitHub (kept locally; see README / file_map.csv)
+session_2026-11-04/videos_top/
+session_2026-11-04/videos_side/
+session_2026-10_unlabeled/
+# derived, regenerable or large
+results/audio/
+kaggle/dataset/crops/
+*.pt
+*.print.html
+__pycache__/
+.DS_Store

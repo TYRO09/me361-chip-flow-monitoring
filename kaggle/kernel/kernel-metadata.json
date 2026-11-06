@@ -1,0 +1,13 @@
+{
+  "id": "tyro09/me361-chip-angle-cnn",
+  "title": "ME361 chip angle CNN",
+  "code_file": "train.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["tyro09/me361-chip-angle-frames"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

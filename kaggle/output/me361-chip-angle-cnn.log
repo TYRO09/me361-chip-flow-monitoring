@@ -1,0 +1,104 @@
+[{"stream_name":"stdout","time":17.31237526,"data":"device: cuda Tesla T4\n"}
+,{"stream_name":"stdout","time":17.753353546,"data":"       n        psi  feed\n"}
+,{"stream_name":"stdout","time":17.753385158,"data":"run                      \n"}
+,{"stream_name":"stdout","time":17.75339075,"data":"R1   690  52.453623  0.08\n"}
+,{"stream_name":"stdout","time":17.753394745,"data":"R2   241  63.995851  0.15\n"}
+,{"stream_name":"stdout","time":17.753399059,"data":"R3   499  41.713427  0.08\n"}
+,{"stream_name":"stdout","time":17.753402717,"data":"R4   253  52.916996  0.15\n"}
+,{"stream_name":"stdout","time":17.753406972,"data":"R5   418  43.244019  0.08\n"}
+,{"stream_name":"stdout","time":17.753410811,"data":"R6   235  48.676596  0.15\n"}
+,{"stream_name":"stdout","time":17.755154718,"data":"fold: hold out R1 (train 1646, test 690)\n"}
+,{"stream_name":"stdout","time":17.972477294,"data":"Downloading: \"https://download.pytorch.org/models/resnet18-f37072fd.pth\" to /root/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth\n"}
+,{"stream_name":"stderr","time":18.352761094,"data":"\r  0%|          | 0.00/44.7M [00:00\u003c?, ?B/s]\r 20%|██        | 9.12M/44.7M [00:00\u003c00:00, 95.4MB/s]\r 78%|███████▊  | 34.8M/44.7M [00:00\u003c00:00, 197MB/s] \r100%|██████████| 44.7M/44.7M [00:00\u003c00:00, 197MB/s]\n"}
+,{"stream_name":"stdout","time":18.414329105,"data":"using ImageNet weights\n"}
+,{"stream_name":"stdout","time":51.766791528,"data":"  epoch 1/8 loss 0.4298\n"}
+,{"stream_name":"stdout","time":60.818990358,"data":"  epoch 2/8 loss 0.1263\n"}
+,{"stream_name":"stdout","time":69.106160056,"data":"  epoch 3/8 loss 0.1002\n"}
+,{"stream_name":"stdout","time":77.589773923,"data":"  epoch 4/8 loss 0.0809\n"}
+,{"stream_name":"stdout","time":85.969431058,"data":"  epoch 5/8 loss 0.0613\n"}
+,{"stream_name":"stdout","time":94.455776307,"data":"  epoch 6/8 loss 0.0386\n"}
+,{"stream_name":"stdout","time":102.976251008,"data":"  epoch 7/8 loss 0.0302\n"}
+,{"stream_name":"stdout","time":111.436903289,"data":"  epoch 8/8 loss 0.0269\n"}
+,{"stream_name":"stdout","time":124.262854471,"data":"   {'run': 'R1', 'n': 690, 'psi_true_mean': 52.4536231884058, 'psi_pred_mean': 55.559566497802734, 'frame_mae': 6.9063630145529045, 'frame_mae_baseline': 6.767080493774985, 'run_mean_error': 3.1059433093969346, 'run_mean_error_baseline': -4.372821244298876, 'feed_acc': 0.16376811594202897}\n"}
+,{"stream_name":"stdout","time":124.264616052,"data":"fold: hold out R2 (train 2095, test 241)\n"}
+,{"stream_name":"stdout","time":124.466387135,"data":"using ImageNet weights\n"}
+,{"stream_name":"stdout","time":135.112592999,"data":"  epoch 1/8 loss 0.4961\n"}
+,{"stream_name":"stdout","time":145.989178306,"data":"  epoch 2/8 loss 0.1356\n"}
+,{"stream_name":"stdout","time":156.534625206,"data":"  epoch 3/8 loss 0.0956\n"}
+,{"stream_name":"stdout","time":167.110930288,"data":"  epoch 4/8 loss 0.0640\n"}
+,{"stream_name":"stdout","time":177.609129849,"data":"  epoch 5/8 loss 0.0546\n"}
+,{"stream_name":"stdout","time":188.052522118,"data":"  epoch 6/8 loss 0.0375\n"}
+,{"stream_name":"stdout","time":198.559447011,"data":"  epoch 7/8 loss 0.0277\n"}
+,{"stream_name":"stdout","time":208.879211458,"data":"  epoch 8/8 loss 0.0258\n"}
+,{"stream_name":"stdout","time":209.739921511,"data":"   {'run': 'R2', 'n': 241, 'psi_true_mean': 63.995850622406635, 'psi_pred_mean': 46.39244079589844, 'frame_mae': 17.607580145364974, 'frame_mae_baseline': 16.305635825270603, 'run_mean_error': -17.603409826508198, 'run_mean_error_baseline': -16.3056358252706, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":209.741728679,"data":"fold: hold out R3 (train 1837, test 499)\n"}
+,{"stream_name":"stdout","time":209.926719153,"data":"using ImageNet weights\n"}
+,{"stream_name":"stdout","time":219.149495854,"data":"  epoch 1/8 loss 0.3760\n"}
+,{"stream_name":"stdout","time":228.507946072,"data":"  epoch 2/8 loss 0.1129\n"}
+,{"stream_name":"stdout","time":237.836698141,"data":"  epoch 3/8 loss 0.0755\n"}
+,{"stream_name":"stdout","time":247.325072776,"data":"  epoch 4/8 loss 0.0655\n"}
+,{"stream_name":"stdout","time":256.703066185,"data":"  epoch 5/8 loss 0.0422\n"}
+,{"stream_name":"stdout","time":265.944701527,"data":"  epoch 6/8 loss 0.0324\n"}
+,{"stream_name":"stdout","time":275.239748843,"data":"  epoch 7/8 loss 0.0259\n"}
+,{"stream_name":"stdout","time":284.498555015,"data":"  epoch 8/8 loss 0.0228\n"}
+,{"stream_name":"stdout","time":286.044840024,"data":"   {'run': 'R3', 'n': 499, 'psi_true_mean': 41.71342685370742, 'psi_pred_mean': 48.82767105102539, 'frame_mae': 8.455721386926685, 'frame_mae_baseline': 11.242995517436613, 'run_mean_error': 7.114244197317973, 'run_mean_error_baseline': 9.739485503396558, 'feed_acc': 0.2785571142284569}\n"}
+,{"stream_name":"stdout","time":286.046536571,"data":"fold: hold out R4 (train 2083, test 253)\n"}
+,{"stream_name":"stdout","time":286.227210615,"data":"using ImageNet weights\n"}
+,{"stream_name":"stdout","time":296.792743738,"data":"  epoch 1/8 loss 0.3920\n"}
+,{"stream_name":"stdout","time":307.092728543,"data":"  epoch 2/8 loss 0.1111\n"}
+,{"stream_name":"stdout","time":317.387607855,"data":"  epoch 3/8 loss 0.0922\n"}
+,{"stream_name":"stdout","time":327.60217034,"data":"  epoch 4/8 loss 0.0710\n"}
+,{"stream_name":"stdout","time":337.892410495,"data":"  epoch 5/8 loss 0.0480\n"}
+,{"stream_name":"stdout","time":347.947883767,"data":"  epoch 6/8 loss 0.0394\n"}
+,{"stream_name":"stdout","time":358.11160158,"data":"  epoch 7/8 loss 0.0277\n"}
+,{"stream_name":"stdout","time":368.533878924,"data":"  epoch 8/8 loss 0.0238\n"}
+,{"stream_name":"stdout","time":369.423851871,"data":"   {'run': 'R4', 'n': 253, 'psi_true_mean': 52.91699604743083, 'psi_pred_mean': 50.33303451538086, 'frame_mae': 8.575935981961578, 'frame_mae_baseline': 7.666261226302137, 'run_mean_error': -2.583961532049969, 'run_mean_error_baseline': -3.9750853417179144, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":369.425567473,"data":"fold: hold out R5 (train 1918, test 418)\n"}
+,{"stream_name":"stdout","time":369.608095467,"data":"using ImageNet weights\n"}
+,{"stream_name":"stdout","time":379.011734152,"data":"  epoch 1/8 loss 0.4786\n"}
+,{"stream_name":"stdout","time":388.225215217,"data":"  epoch 2/8 loss 0.1241\n"}
+,{"stream_name":"stdout","time":397.564667167,"data":"  epoch 3/8 loss 0.0973\n"}
+,{"stream_name":"stdout","time":406.757985007,"data":"  epoch 4/8 loss 0.0710\n"}
+,{"stream_name":"stdout","time":415.944772529,"data":"  epoch 5/8 loss 0.0520\n"}
+,{"stream_name":"stdout","time":425.258811421,"data":"  epoch 6/8 loss 0.0386\n"}
+,{"stream_name":"stdout","time":434.505258155,"data":"  epoch 7/8 loss 0.0304\n"}
+,{"stream_name":"stdout","time":443.808309961,"data":"  epoch 8/8 loss 0.0251\n"}
+,{"stream_name":"stdout","time":444.99616725,"data":"   {'run': 'R5', 'n': 418, 'psi_true_mean': 43.24401913875598, 'psi_pred_mean': 51.8062629699707, 'frame_mae': 9.962654871233342, 'frame_mae_baseline': 9.57758530367059, 'run_mean_error': 8.562243831214722, 'run_mean_error_baseline': 7.4640100583243125, 'feed_acc': 0.18899521531100477}\n"}
+,{"stream_name":"stdout","time":444.997791174,"data":"fold: hold out R6 (train 2101, test 235)\n"}
+,{"stream_name":"stdout","time":445.175612838,"data":"using ImageNet weights\n"}
+,{"stream_name":"stdout","time":455.342732481,"data":"  epoch 1/8 loss 0.4871\n"}
+,{"stream_name":"stdout","time":465.60188627,"data":"  epoch 2/8 loss 0.1340\n"}
+,{"stream_name":"stdout","time":475.980286535,"data":"  epoch 3/8 loss 0.0963\n"}
+,{"stream_name":"stdout","time":486.1495239,"data":"  epoch 4/8 loss 0.0709\n"}
+,{"stream_name":"stdout","time":496.174295542,"data":"  epoch 5/8 loss 0.0528\n"}
+,{"stream_name":"stdout","time":506.402895392,"data":"  epoch 6/8 loss 0.0406\n"}
+,{"stream_name":"stdout","time":516.686776722,"data":"  epoch 7/8 loss 0.0299\n"}
+,{"stream_name":"stdout","time":526.910675455,"data":"  epoch 8/8 loss 0.0268\n"}
+,{"stream_name":"stdout","time":527.777070421,"data":"   {'run': 'R6', 'n': 235, 'psi_true_mean': 48.67659574468085, 'psi_pred_mean': 43.0670280456543, 'frame_mae': 6.420886814847906, 'frame_mae_baseline': 4.8262002896290515, 'run_mean_error': -5.609567699026556, 'run_mean_error_baseline': 0.773666035423858, 'feed_acc': 0.0}\n"}
+,{"stream_name":"stdout","time":527.812222906,"data":"{\n"}
+,{"stream_name":"stdout","time":527.812244975,"data":" \"run_level_rmse\": 8.959124941035594,\n"}
+,{"stream_name":"stdout","time":527.812250869,"data":" \"run_level_rmse_baseline\": 8.679134095930758,\n"}
+,{"stream_name":"stdout","time":527.81225549,"data":" \"frame_mae\": 9.020219267231145,\n"}
+,{"stream_name":"stdout","time":527.812260095,"data":" \"frame_mae_baseline\": 9.112307514147004,\n"}
+,{"stream_name":"stdout","time":527.81226477,"data":" \"feed_acc\": 0.14169520547945205,\n"}
+,{"stream_name":"stdout","time":527.812269508,"data":" \"device\": \"cuda\",\n"}
+,{"stream_name":"stdout","time":527.812274598,"data":" \"minutes\": 8.500972274939219\n"}
+,{"stream_name":"stdout","time":527.812279388,"data":"}\n"}
+,{"stream_name":"stdout","time":527.81228436,"data":"final model on all runs\n"}
+,{"stream_name":"stdout","time":528.001152666,"data":"using ImageNet weights\n"}
+,{"stream_name":"stdout","time":539.523941363,"data":"  epoch 1/8 loss 0.4522\n"}
+,{"stream_name":"stdout","time":550.997570662,"data":"  epoch 2/8 loss 0.1252\n"}
+,{"stream_name":"stdout","time":562.269838742,"data":"  epoch 3/8 loss 0.1003\n"}
+,{"stream_name":"stdout","time":573.833556596,"data":"  epoch 4/8 loss 0.0676\n"}
+,{"stream_name":"stdout","time":585.16566865,"data":"  epoch 5/8 loss 0.0533\n"}
+,{"stream_name":"stdout","time":596.544717729,"data":"  epoch 6/8 loss 0.0396\n"}
+,{"stream_name":"stdout","time":608.182245784,"data":"  epoch 7/8 loss 0.0293\n"}
+,{"stream_name":"stdout","time":619.508728748,"data":"  epoch 8/8 loss 0.0271\n"}
+,{"stream_name":"stdout","time":619.566379579,"data":"done\n"}
+,{"stream_name":"stderr","time":627.596932147,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":627.596968601,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":627.902363505,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":627.902386395,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":628.74733431,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":629.782745922,"data":"[NbConvertApp] Writing 310548 bytes to __results__.html\n"}
+]

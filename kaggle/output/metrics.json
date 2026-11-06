@@ -1,0 +1,78 @@
+{
+ "folds": [
+  {
+   "run": "R1",
+   "n": 690,
+   "psi_true_mean": 52.4536231884058,
+   "psi_pred_mean": 55.559566497802734,
+   "frame_mae": 6.9063630145529045,
+   "frame_mae_baseline": 6.767080493774985,
+   "run_mean_error": 3.1059433093969346,
+   "run_mean_error_baseline": -4.372821244298876,
+   "feed_acc": 0.16376811594202897
+  },
+  {
+   "run": "R2",
+   "n": 241,
+   "psi_true_mean": 63.995850622406635,
+   "psi_pred_mean": 46.39244079589844,
+   "frame_mae": 17.607580145364974,
+   "frame_mae_baseline": 16.305635825270603,
+   "run_mean_error": -17.603409826508198,
+   "run_mean_error_baseline": -16.3056358252706,
+   "feed_acc": 0.0
+  },
+  {
+   "run": "R3",
+   "n": 499,
+   "psi_true_mean": 41.71342685370742,
+   "psi_pred_mean": 48.82767105102539,
+   "frame_mae": 8.455721386926685,
+   "frame_mae_baseline": 11.242995517436613,
+   "run_mean_error": 7.114244197317973,
+   "run_mean_error_baseline": 9.739485503396558,
+   "feed_acc": 0.2785571142284569
+  },
+  {
+   "run": "R4",
+   "n": 253,
+   "psi_true_mean": 52.91699604743083,
+   "psi_pred_mean": 50.33303451538086,
+   "frame_mae": 8.575935981961578,
+   "frame_mae_baseline": 7.666261226302137,
+   "run_mean_error": -2.583961532049969,
+   "run_mean_error_baseline": -3.9750853417179144,
+   "feed_acc": 0.0
+  },
+  {
+   "run": "R5",
+   "n": 418,
+   "psi_true_mean": 43.24401913875598,
+   "psi_pred_mean": 51.8062629699707,
+   "frame_mae": 9.962654871233342,
+   "frame_mae_baseline": 9.57758530367059,
+   "run_mean_error": 8.562243831214722,
+   "run_mean_error_baseline": 7.4640100583243125,
+   "feed_acc": 0.18899521531100477
+  },
+  {
+   "run": "R6",
+   "n": 235,
+   "psi_true_mean": 48.67659574468085,
+   "psi_pred_mean": 43.0670280456543,
+   "frame_mae": 6.420886814847906,
+   "frame_mae_baseline": 4.8262002896290515,
+   "run_mean_error": -5.609567699026556,
+   "run_mean_error_baseline": 0.773666035423858,
+   "feed_acc": 0.0
+  }
+ ],
+ "run_level_rmse": 8.959124941035594,
+ "run_level_rmse_baseline": 8.679134095930758,
+ "frame_mae": 9.020219267231145,
+ "frame_mae_baseline": 9.112307514147004,
+ "feed_acc": 0.14169520547945205,
+ "device": "cuda",
+ "minutes": 8.500972274939219,
+ "minutes_total": 10.0301984389623
+}
