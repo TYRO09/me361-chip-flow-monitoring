@@ -9,3 +9,4 @@ kaggle/dataset/crops/
 *.print.html
 __pycache__/
 .DS_Store
+.superpowers/

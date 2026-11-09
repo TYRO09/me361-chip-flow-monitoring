@@ -32,12 +32,9 @@ RUNS = {
     "R6": dict(file="R6_f0.15_ap0.6_top.MOV", ref_t=14, tip=(245, 318), feed=(1, 0), out=(0, -1), window=(9, 20)),
 }
 
-SCALE_MAX = 960
-TPL = 120            # template size (px)
-SEARCH = 90          # search radius around previous position (px)
-R_IN, R_OUT = 25, 220
-DIFF_THR = 18        # grey-level threshold for "moving" pixels
-PSI_RANGE = (-60, 150)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from chip_kernel import (SCALE_MAX, TPL, SEARCH, R_IN, R_OUT, DIFF_THR, PSI_RANGE, rot, axis_rotation,  # noqa: E402
+                         track_step, blur16, frame_features)
 
 
 def load_frames(path, t0, t1):
@@ -55,33 +52,6 @@ def load_frames(path, t0, t1):
     return frames, np.array(times), fps
 
 
-def rot(v, deg):
-    a = math.radians(deg)
-    return np.array([v[0] * math.cos(a) - v[1] * math.sin(a), v[0] * math.sin(a) + v[1] * math.cos(a)])
-
-
-def axis_angle(gray, tip, ref_deg):
-    """Orientation (deg, mod 180) of the workpiece axis from long straight edges near the tip."""
-    h, w = gray.shape
-    x0, y0 = int(tip[0]), int(tip[1])
-    m = np.zeros_like(gray)
-    cv2.circle(m, (x0, y0), 400, 255, -1)
-    edges = cv2.Canny(cv2.GaussianBlur(gray, (5, 5), 0), 40, 120) & m
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 360, 80, minLineLength=180, maxLineGap=10)
-    if lines is None:
-        return None
-    angs, wts = [], []
-    for x1, y1, x2, y2 in lines[:, 0]:
-        a = math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180
-        d = (a - ref_deg + 90) % 180 - 90
-        if abs(d) < 15:
-            angs.append(ref_deg + d)
-            wts.append(math.hypot(x2 - x1, y2 - y1))
-    if not angs:
-        return None
-    return float(np.average(angs, weights=wts))
-
-
 def track(frames, ref_idx, tip0, tpl_center):
     """Template-track the insert forwards and backwards from the reference frame."""
     g = [cv2.cvtColor(f, cv2.COLOR_BGR2GRAY) for f in frames]
@@ -94,25 +64,15 @@ def track(frames, ref_idx, tip0, tpl_center):
     for rng in (range(ref_idx + 1, len(frames)), range(ref_idx - 1, -1, -1)):
         prev = pos[ref_idx].copy()
         for i in rng:
-            h, w = g[i].shape
-            x0 = int(max(0, prev[0] - TPL // 2 - SEARCH)); x1 = int(min(w, prev[0] + TPL // 2 + SEARCH))
-            y0 = int(max(0, prev[1] - TPL // 2 - SEARCH)); y1 = int(min(h, prev[1] + TPL // 2 + SEARCH))
-            win = g[i][y0:y1, x0:x1]
-            if win.shape[0] < TPL or win.shape[1] < TPL:
+            st = track_step(g[i], tpl, prev, SEARCH)
+            if st is None:
                 break
-            res = cv2.matchTemplate(win, tpl, cv2.TM_CCOEFF_NORMED)
-            _, mx, _, loc = cv2.minMaxLoc(res)
-            cur = np.array([x0 + loc[0] + TPL // 2, y0 + loc[1] + TPL // 2], float)
+            cur, mx = st
             pos[i], score[i] = cur, mx
             if mx > 0.5:
                 prev = cur
     tips = [None if p is None else p + off for p in pos]
     return tips, score, g
-
-
-def shift(img, dx, dy):
-    M = np.float32([[1, 0, dx], [0, 1, dy]])
-    return cv2.warpAffine(img, M, (img.shape[1], img.shape[0]), borderMode=cv2.BORDER_REPLICATE)
 
 
 def measure_run(rid, cfg, save_overlays=6):
@@ -124,10 +84,8 @@ def measure_run(rid, cfg, save_overlays=6):
     ref_axis = math.degrees(math.atan2(feed0[1], feed0[0])) % 180
     tpl_center = np.array(cfg["tip"]) + 70 * out0 - 45 * feed0
     tips, score, g = track(frames, ref_idx, cfg["tip"], tpl_center)
-    g_blur = [cv2.GaussianBlur(x, (3, 3), 0).astype(np.int16) for x in g]
+    g_blur = [blur16(x) for x in g]
 
-    h, w = g[0].shape
-    yy, xx = np.mgrid[0:h, 0:w]
     rows = []
     os.makedirs(os.path.join(OUT, "overlays"), exist_ok=True)
     overlay_idx = set(np.linspace(1, len(frames) - 2, save_overlays).astype(int)) if save_overlays else set()
@@ -135,50 +93,17 @@ def measure_run(rid, cfg, save_overlays=6):
         if any(tips[j] is None for j in (i - 1, i, i + 1)) or min(score[i - 1:i + 2]) < 0.5:
             rows.append(dict(run=rid, t=round(times[i], 3), valid=0)); continue
         tip = tips[i]
-        ax = axis_angle(g[i], tip, ref_axis)
-        drot = 0.0 if ax is None else ((ax - ref_axis + 90) % 180 - 90)
+        drot = axis_rotation(g[i], tip, ref_axis)
         u_f, u_o = rot(feed0, drot), rot(out0, drot)
-        a = shift(g_blur[i - 1], *(tips[i] - tips[i - 1]))
-        b = shift(g_blur[i + 1], *(tips[i] - tips[i + 1]))
-        c = g_blur[i]
-        motion = np.minimum(np.abs(c - a), np.abs(c - b)).astype(np.float32)
-        dx, dy = xx - tip[0], yy - tip[1]
-        r = np.hypot(dx, dy)
-        along_f = dx * u_f[0] + dy * u_f[1]
-        along_o = dx * u_o[0] + dy * u_o[1]
-        psi = np.degrees(np.arctan2(along_o, along_f))
-        sel = (r > R_IN) & (r < R_OUT) & (along_o > -5) & (psi > PSI_RANGE[0]) & (psi < PSI_RANGE[1]) & (motion > DIFF_THR)
-        wts = motion[sel] - DIFF_THR
-        n_px = int(sel.sum())
-        if n_px < 40:
-            rows.append(dict(run=rid, t=round(times[i], 3), valid=0, n_px=n_px, track=round(score[i], 3))); continue
-        hist, edges = np.histogram(psi[sel], bins=np.arange(PSI_RANGE[0], PSI_RANGE[1] + 1, 2), weights=wts)
-        k = np.exp(-0.5 * (np.arange(-7, 8) * 2 / 6.0) ** 2)
-        hs = np.convolve(hist, k / k.sum(), mode="same")
-        peak = float(edges[np.argmax(hs)] + 1)
-        mean = float(np.average(psi[sel], weights=wts))
-        # extra features: angular spread of the spray, reach, and a second, independent angle
-        # estimate from the orientation of the motion streaks (structure tensor) instead of position
-        a = np.radians(psi[sel])
-        R = np.hypot(np.average(np.cos(a), weights=wts), np.average(np.sin(a), weights=wts))
-        spread = float(np.degrees(np.sqrt(-2 * np.log(max(R, 1e-6)))))
-        reach = float(np.average(r[sel], weights=wts) / R_OUT)
-        gy, gx = np.gradient(cv2.GaussianBlur(motion, (5, 5), 0))
-        jxx, jyy, jxy = (np.sum(wts * gx[sel] ** 2), np.sum(wts * gy[sel] ** 2), np.sum(wts * gx[sel] * gy[sel]))
-        streak = 0.5 * math.atan2(2 * jxy, jxx - jyy) + math.pi / 2           # streak axis in image coords
-        sv = np.array([math.cos(streak), math.sin(streak)])
-        ps = math.degrees(math.atan2(sv @ u_o, sv @ u_f))
-        psi_streak = ps if ps >= 0 else ps + 180                               # axis -> outward-going direction
-        coherence = float(math.hypot(jxx - jyy, 2 * jxy) / (jxx + jyy + 1e-9))
-        # static clutter in front of the tool: edge density of the current frame in the same annulus,
-        # regardless of motion (rises when chips pile up / tangle near the tool)
-        ring = (r > R_IN) & (r < R_OUT) & (along_o > -5) & (psi > PSI_RANGE[0]) & (psi < 90)
-        edges = cv2.Canny(g[i], 60, 160) > 0
-        clutter = float(edges[ring].mean())
-        rows.append(dict(run=rid, t=round(times[i], 3), valid=1, psi_peak=round(peak, 2), psi_mean=round(mean, 2),
-                         psi_streak=round(psi_streak, 2), coherence=round(coherence, 3), spread=round(spread, 2),
-                         reach=round(reach, 3), clutter=round(clutter, 4),
-                         n_px=n_px, activity=round(float(wts.sum()), 1), track=round(score[i], 3),
+        ft = frame_features(g_blur[i - 1], g_blur[i], g_blur[i + 1], g[i], tips[i - 1], tips[i], tips[i + 1], u_f, u_o,
+                            thr=DIFF_THR, r_out=R_OUT)
+        if ft is None:
+            rows.append(dict(run=rid, t=round(times[i], 3), valid=0, n_px=0, track=round(score[i], 3))); continue
+        sel, peak = ft["sel"], ft["psi_peak"]
+        rows.append(dict(run=rid, t=round(times[i], 3), valid=1, psi_peak=round(peak, 2), psi_mean=round(ft["psi_mean"], 2),
+                         psi_streak=round(ft["psi_streak"], 2), coherence=round(ft["coherence"], 3), spread=round(ft["spread"], 2),
+                         reach=round(ft["reach"], 3), clutter=round(ft["clutter"], 4),
+                         n_px=ft["n_px"], activity=round(ft["activity"], 1), track=round(score[i], 3),
                          axis_rot=round(drot, 2), tip_x=round(tip[0], 1), tip_y=round(tip[1], 1),
                          u_f=[round(u_f[0], 4), round(u_f[1], 4)], u_o=[round(u_o[0], 4), round(u_o[1], 4)]))
         if i in overlay_idx:
