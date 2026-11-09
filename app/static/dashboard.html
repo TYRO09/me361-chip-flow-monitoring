@@ -9,6 +9,10 @@
 <body>
 <header>
   <h1>Chip flow monitor</h1>
+  <nav id="nav">
+    <button data-step="1">1 Setup</button><button data-step="2">2 Calibrate</button>
+    <button data-step="3">3 Live</button><button data-step="4">4 Summary</button>
+  </nav>
   <span id="b-replay" class="badge-replay" hidden>REPLAY: recorded run</span>
   <span id="c-phone" class="chip">phone: none</span>
   <span id="c-mic" class="chip">mic: off</span>
@@ -16,45 +20,101 @@
   <span id="c-lat" class="chip">latency: n/a</span>
   <span id="c-cal" class="chip">not calibrated</span>
 </header>
-<main>
-  <section>
+
+<main id="main" data-step="1">
+  <section id="left">
     <div class="card">
-      <h2>Camera</h2>
+      <h2 id="vid-title">Camera</h2>
       <div class="video"><canvas id="cv" width="540" height="960"></canvas><div class="ph" id="ph">No video yet. Open the phone page (scan the code) or start a replay.</div></div>
-      <p class="small">Yellow = measured chip direction · blue = feed direction · ring = tool tip</p>
+      <p class="small" id="vid-help">Yellow = measured chip direction · blue = feed direction · ring = tool tip</p>
     </div>
   </section>
-  <section>
-    <div class="card" id="live">
-      <h2>Chip angle <span class="tag m">measured</span></h2>
-      <div class="grid2">
-        <div><div class="big" id="psi">--</div><div class="k">degrees from the feed direction</div></div>
-        <div><div class="k">our model <span class="tag o">our model</span></div><div class="v" id="pred">--</div>
-             <div class="k" style="margin-top:6px">theory (Colwell) <span class="tag l">literature</span></div><div class="v" id="theory">--</div></div>
-      </div>
-      <canvas class="trace" id="tr-psi"></canvas>
-    </div>
-    <div class="card">
-      <h2>Spindle and cutting <span class="tag m">measured (microphone)</span></h2>
-      <div class="grid2"><div><div class="k">spindle speed</div><div class="v" id="rpm">--</div></div>
-        <div><div class="k">state</div><div class="v" id="cut">--</div></div></div>
-    </div>
-    <div class="card">
-      <h2>Chip build-up score <span class="tag m">measured (video)</span></h2>
-      <canvas class="trace" id="tr-score"></canvas>
-      <div class="alarm" id="alarm">chip flow normal</div>
-    </div>
-    <div class="card">
-      <h2>Connect a phone or replay a recorded run</h2>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
-        <img class="qr" id="qr" alt="QR code for the phone page">
-        <div>
-          <div class="small" id="url">phone page</div>
-          <div class="small" style="margin:8px 0">Replay runs the recorded video and audio through the same pipeline:</div>
-          <div class="runs" id="runs"></div>
-          <div style="margin-top:8px"><button id="stop">Stop</button></div>
+
+  <section id="right">
+    <!-- 1 SETUP -->
+    <div class="step" id="p-setup">
+      <div class="card">
+        <h2>Cutting parameters</h2>
+        <div class="form">
+          <label>Diameter after the cut (mm)<input id="in-d" type="number" step="0.1" value="24.8"></label>
+          <label>Feed f (mm/rev)<input id="in-f" type="number" step="0.01" value="0.15"></label>
+          <label>Depth of cut ap (mm)<input id="in-ap" type="number" step="0.1" value="0.6"></label>
+          <label>Cutting speed Vc (m/min)<input id="in-vc" type="number" step="10" value="150"></label>
+          <label>Tool nose radius (mm)<input id="in-re" type="number" step="0.1" value="0.4"></label>
+          <label>Material<input id="in-mat" type="text" value="AISI 1020 (assumed)"></label>
         </div>
       </div>
+      <div class="card">
+        <h2>What we expect</h2>
+        <div class="grid2">
+          <div><div class="k">chip angle <span class="tag o">our model</span></div><div class="v" id="s-pred">--</div></div>
+          <div><div class="k">spindle speed (G96, cap 2500)</div><div class="v" id="s-rpm">--</div></div>
+        </div>
+        <p id="s-extrap" class="pill" hidden>Outside the six tested settings (f 0.08-0.15, ap 0.3-0.9): the prediction is an extrapolation.</p>
+      </div>
+      <div class="card">
+        <h2>Next</h2>
+        <button class="primary" id="to-cal">Calibrate the phone</button>
+        <div class="small" style="margin:14px 0 6px">No lathe at hand? Replay a recorded run through the same pipeline:</div>
+        <div class="runs" id="runs"></div>
+      </div>
+    </div>
+
+    <!-- 2 CALIBRATE -->
+    <div class="step" id="p-cal">
+      <div class="card" id="cal-connect">
+        <h2>Phone</h2>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+          <img class="qr" id="qr" alt="QR code for the phone page">
+          <div class="small">Scan with the phone, tap "continue" past the certificate warning, then "Start camera and microphone".<br><b id="url"></b></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Calibration</h2>
+        <ol class="check" id="check">
+          <li id="k-place"><span class="dot"></span>Place the phone: tool tip in view, phone level
+            <div class="bubble" id="bubble"><i></i></div><span class="small" id="tilt-txt">tilt n/a</span></li>
+          <li id="k-tip"><span class="dot"></span><button data-tool="tip">Click the tool tip</button></li>
+          <li id="k-feed"><span class="dot"></span><button data-tool="feed">Click a point toward the chuck (feed direction)</button></li>
+          <li id="k-work"><span class="dot"></span><button data-tool="work">Click on the workpiece</button></li>
+          <li id="k-scale"><span class="dot"></span><button data-tool="scale">Optional: click two ends of a known length</button>
+            <input id="in-scale" type="number" step="0.1" placeholder="mm" style="width:70px"></li>
+          <li id="k-idle"><span class="dot"></span><button id="idle-btn">Record 3 s idle sound</button><span class="small" id="idle-txt">spindle running, not cutting</span></li>
+        </ol>
+        <div id="cal-msg" class="small"></div>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="primary" id="apply" disabled>Apply calibration</button><button id="to-live" disabled>Start live monitoring</button></div>
+      </div>
+    </div>
+
+    <!-- 3 LIVE -->
+    <div class="step" id="p-live">
+      <div class="card">
+        <h2>Chip angle <span class="tag m">measured</span></h2>
+        <div class="grid2">
+          <div><div class="big" id="psi">--</div><div class="k">degrees from the feed direction</div></div>
+          <div><div class="k">our model <span class="tag o">our model</span></div><div class="v" id="pred">--</div></div>
+        </div>
+        <canvas class="trace" id="tr-psi"></canvas>
+      </div>
+      <div class="card">
+        <h2>Spindle and cutting <span class="tag m">measured (microphone)</span></h2>
+        <div class="grid2"><div><div class="k">spindle speed</div><div class="v" id="rpm">--</div></div>
+          <div><div class="k">state</div><div class="v" id="cut">--</div></div></div>
+      </div>
+      <div class="card">
+        <h2>Chip build-up score <span class="tag m">measured (video)</span></h2>
+        <canvas class="trace" id="tr-score"></canvas>
+        <div class="alarm" id="alarm">chip flow normal</div>
+        <div class="small" id="warn" style="margin-top:8px"></div>
+      </div>
+      <div style="display:flex;gap:8px"><button id="stop">Stop</button><button id="to-sum" class="primary">Show summary</button></div>
+    </div>
+
+    <!-- 4 SUMMARY -->
+    <div class="step" id="p-summary">
+      <div class="card"><h2>Run summary</h2><div id="sum" class="grid2"></div>
+        <p class="small" id="sum-note"></p>
+        <a id="csv" href="/api/summary.csv" download="chip_run.csv"><button>Download CSV</button></a></div>
     </div>
   </section>
 </main>

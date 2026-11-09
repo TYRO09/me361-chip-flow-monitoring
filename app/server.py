@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import cv2
 import numpy as np
+import pandas as pd
 from starlette.applications import Starlette
 from starlette.responses import FileResponse, JSONResponse, Response
 from starlette.routing import Mount, Route, WebSocketRoute
@@ -32,12 +33,30 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "code"))
 import audio_sensor  # noqa: E402
 from app import replay as replay_mod  # noqa: E402
 from app.audio_engine import AudioEngine  # noqa: E402
-from app.engine import ChipEngine, scale_frame  # noqa: E402
+from app.engine import Calibration, ChipEngine, scale_frame  # noqa: E402
+import measure_chip_angle as M  # noqa: E402
 
 PORT = int(os.environ.get("APP_PORT", "8443"))
 PREVIEW_FPS = 15
 CUT_ON_S, CUT_OFF_S = 0.3, 1.0      # audio must say "cutting" this long to start a cut / "not cutting" to end it
 PHONE_STALE_S = 5.0
+CUT_LENGTH_MM = 61.0                # Z+1 -> Z-60
+MODEL = (26.8, 101.0, 17.7)         # fitted M1: psi = 26.8 + 101 f + 17.7 ap
+TESTED = dict(f=(0.08, 0.15), ap=(0.3, 0.9))
+DEFAULT_PARAMS = dict(d_mm=24.8, f=0.15, ap=0.6, vc=150.0, material="AISI 1020 (assumed)", r_eps=0.4)
+
+
+def rpm_for(d_mm, vc):
+    return min(2500.0, 1000.0 * vc / (math.pi * d_mm))
+
+
+def predict_psi(f, ap):
+    return MODEL[0] + MODEL[1] * f + MODEL[2] * ap
+
+
+def extrapolating(f, ap):
+    eps = 1e-6
+    return not (TESTED["f"][0] - eps <= f <= TESTED["f"][1] + eps and TESTED["ap"][0] - eps <= ap <= TESTED["ap"][1] + eps)
 
 
 def lan_ip():
@@ -100,7 +119,8 @@ class Pipeline:
         self._cut_edges(t, cutting, chip["valid"])
         chip = dict(chip)
         chip["psi_display"] = chip["psi"] if (chip["valid"] and cutting is not False) else float("nan")
-        return dict(chip=chip, audio=aud, cut_active=self.cut_on)
+        warnings = [k for k in ("orientation_changed", "tracking_lost") if chip[k]] + (["frame_gap"] if chip["gap"] else [])
+        return dict(chip=chip, audio=aud, cut_active=self.cut_on, warnings=warnings)
 
 
 class Session:
@@ -119,6 +139,9 @@ class Session:
         self.rtt, self.mode = 0.0, None
         self.arrivals = deque(maxlen=60)
         self.tilt = None
+        self.last_jpeg = None
+        self.params = dict(DEFAULT_PARAMS)
+        self.history = []
 
     def _cancel_replay(self):
         t = self.replay_task
@@ -130,6 +153,7 @@ class Session:
     def set_calibration(self, cal):
         self.calibration = cal
         self.live = Pipeline(ChipEngine(cal), self.audio)
+        self.history = []
 
     def set_audio(self, sr):
         if sr is None:
@@ -140,6 +164,12 @@ class Session:
                 self.audio.idle_db = self.idle_db
         if self.live is not None:
             self.live.audio = self.audio
+
+    def record(self, out):
+        c = out["chip"]
+        if out["cut_active"]:
+            self.history.append(dict(t=out["t"], valid=c["valid"], psi_raw=c["psi_raw"], score=c["score"],
+                                     alarm=c["alarm"], alarm_t=c["alarm_t"]))
 
     # ---- fan-out to dashboards ----
     def status(self):
@@ -219,6 +249,7 @@ async def ws_phone(ws: WebSocket):
                     t_recv = time.time()
                     session.arrivals.append(t_recv)
                     jpeg = b[9:]
+                    session.last_jpeg = jpeg
                     t = struct.unpack(">d", b[1:9])[0] / 1000.0
                     if session.live is not None:
                         def work(jpeg=jpeg, t=t):
@@ -228,6 +259,7 @@ async def ws_phone(ws: WebSocket):
                         if out is not None:
                             out.update(type="state", mode="live", t=t, fps=session.fps(),
                                        latency_ms=session.rtt / 2 + (time.time() - t_recv) * 1000)
+                            session.record(out)
                             await session.broadcast(out)
                     if t_recv - last_prev >= 1.0 / PREVIEW_FPS:
                         last_prev = t_recv
@@ -249,6 +281,10 @@ async def run_replay(run, speed):
     audio = AudioEngine(16000)
     audio.push(x[:3 * 16000]); audio.calibrate_idle()
     pipe = Pipeline(ChipEngine(cal), audio)
+    session.history = []
+    row = pd.read_csv(os.path.join(M.SESSION, "runs.csv")).set_index("run_id").loc[run]
+    session.params = dict(DEFAULT_PARAMS, d_mm=float(row.dia_after_mm), f=float(row.feed_mm_per_rev),
+                          ap=float(row.depth_of_cut_mm), vc=float(row.Vc_m_per_min))
     session.mode = "replay"
     await session.broadcast(session.status())
     it = iter(replay_mod.frames(run))
@@ -280,6 +316,7 @@ async def run_replay(run, speed):
             out, jpeg = await loop.run_in_executor(session.exec, work, bgr, t)
             if out is not None:
                 out.update(type="state", mode="replay", t=t, fps=session.fps(), latency_ms=(time.time() - t_recv) * 1000)
+                session.record(out)
                 await session.broadcast(out, jpeg)
     finally:
         if session.mode == "replay":
@@ -318,9 +355,103 @@ async def api_qr(request):
 async def api_config(request):
     d = float(request.query_params.get("d", "30"))
     vc = float(request.query_params.get("vc", "150"))
-    rpm = min(2500.0, 1000.0 * vc / (math.pi * d))
-    return JSONResponse(dict(lan_ip=lan_ip(), phone_url=phone_url(), rpm_expected=rpm,
-                             runs=sorted(replay_mod.CUT)))
+    return JSONResponse(dict(lan_ip=lan_ip(), phone_url=phone_url(), rpm_expected=rpm_for(d, vc),
+                             runs=sorted(replay_mod.CUT), calibrated=session.calibration is not None,
+                             params=session.params))
+
+
+async def api_setup(request):
+    b = await request.json()
+    p = dict(DEFAULT_PARAMS)
+    for k in p:
+        if k in b:
+            p[k] = b[k] if k == "material" else float(b[k])
+    session.params = p
+    return JSONResponse(dict(predicted_psi=predict_psi(p["f"], p["ap"]), rpm_expected=rpm_for(p["d_mm"], p["vc"]),
+                             extrapolation=extrapolating(p["f"], p["ap"]), tested=TESTED, params=p))
+
+
+def _ray_to_edge(tip, d, w, h):
+    t = []
+    for axis, size in ((0, w), (1, h)):
+        if abs(d[axis]) > 1e-9:
+            t.append(((size if d[axis] > 0 else 0) - tip[axis]) / d[axis])
+    return min(t)
+
+
+async def api_calibrate(request):
+    if session.last_jpeg is None:
+        return JSONResponse(dict(ok=False, error="no camera frame yet: connect the phone first"), status_code=409)
+    b = await request.json()
+    img = cv2.imdecode(np.frombuffer(session.last_jpeg, np.uint8), cv2.IMREAD_COLOR)
+    h, w = scale_frame(img).shape[:2]
+    P = lambda q: np.array([q[0] * w, q[1] * h], float)       # normalised 0-1 -> pixels of the 960-px frame
+    tip, fp, wp = P(b["tip"]), P(b["feed_pt"]), P(b["work_pt"])
+    feed = fp - tip
+    if np.linalg.norm(feed) < 10:
+        return JSONResponse(dict(ok=False, error="feed direction points are too close together"), status_code=422)
+    feed /= np.linalg.norm(feed)
+    n = np.array([-feed[1], feed[0]])
+    out = n if np.dot(n, tip - wp) > 0 else -n                # outward = away from the workpiece
+    c = tip + 70 * out - 45 * feed                            # centre of the tracking template (see ChipEngine)
+    half = 60 + 90                                            # template half-size + search radius must stay in the frame
+    if not (half <= c[0] <= w - half + 90 and half <= c[1] <= h - half + 90) or not (60 <= c[0] <= w - 60 and 60 <= c[1] <= h - 60):
+        return JSONResponse(dict(ok=False, error="tool tip is too close to the frame edge: re-aim the phone so the tip and "
+                                                 "the area around it are well inside the picture"), status_code=422)
+    mm_per_px = None
+    if b.get("scale_pts") and b.get("scale_mm"):
+        dpx = np.linalg.norm(P(b["scale_pts"][0]) - P(b["scale_pts"][1]))
+        mm_per_px = float(b["scale_mm"]) / dpx if dpx > 5 else None
+    warnings = []
+    room = _ray_to_edge(tip, feed, w, h)
+    need = CUT_LENGTH_MM / mm_per_px if mm_per_px else 0.15 * max(w, h)
+    if room < need:
+        warnings.append("tip_near_edge")
+    cal = Calibration(tip=tuple(tip), feed_dir=tuple(feed), out_dir=tuple(out), ref_frame=img, mm_per_px=mm_per_px)
+    session.set_calibration(cal)
+    await session.broadcast(session.status())
+    return JSONResponse(dict(ok=True, warnings=warnings, mm_per_px=mm_per_px, room_px=float(room)))
+
+
+async def api_idle_noise(request):
+    b = await request.json()
+    if session.audio is None:
+        return JSONResponse(dict(ok=False, error="microphone is off: allow microphone access on the phone"), status_code=409)
+    loop = asyncio.get_running_loop()
+    r = await loop.run_in_executor(session.exec, session.audio.calibrate_idle)
+    if r["idle_db"] is None:
+        return JSONResponse(dict(ok=False, error="need about 3 s of audio first"), status_code=409)
+    session.idle_db = r["idle_db"]
+    # the idle sound is heard before the cut, on the larger diameter (after-cut diameter + 2 ap); G96 sets rpm from it
+    expected = rpm_for(float(b.get("d_mm", session.params["d_mm"])) + 2 * session.params["ap"], float(b.get("vc", session.params["vc"])))
+    ok = abs(r["rpm_detected"] - expected) / expected <= 0.05
+    return JSONResponse(dict(ok=ok, warnings=[] if ok else ["rpm_mismatch"], idle_db=r["idle_db"],
+                             rpm_detected=r["rpm_detected"], rpm_expected=expected))
+
+
+def make_summary():
+    h = session.history
+    valid = [r for r in h if r["valid"]]
+    psi = np.array([r["psi_raw"] for r in valid]) if valid else np.array([])
+    p = session.params
+    med = float(np.median(psi)) if len(psi) else None
+    pred = predict_psi(p["f"], p["ap"])
+    return clean(dict(params=p, predicted_psi=pred, measured_psi_median=med,
+                      measured_psi_iqr=[float(np.percentile(psi, 25)), float(np.percentile(psi, 75))] if len(psi) else None,
+                      error_deg=None if med is None else med - pred, frames=len(h), valid_frames=len(valid),
+                      alarm_t=next((r["alarm_t"] for r in h if r["alarm"]), None),
+                      cut_duration_s=(h[-1]["t"] - h[0]["t"]) if h else 0.0, extrapolation=extrapolating(p["f"], p["ap"])))
+
+
+async def api_summary(request):
+    return JSONResponse(make_summary())
+
+
+async def api_summary_csv(request):
+    rows = ["t,psi_raw,valid,score,alarm"] + [
+        f'{r["t"]:.3f},{"" if not math.isfinite(r["psi_raw"]) else r["psi_raw"]},{int(r["valid"])},'
+        f'{"" if not math.isfinite(r["score"]) else round(r["score"], 3)},{int(r["alarm"])}' for r in session.history]
+    return Response("\n".join(rows) + "\n", media_type="text/csv")
 
 
 async def page(name):
@@ -337,7 +468,9 @@ async def phone_page(request):
 
 app = Starlette(routes=[
     Route("/", index), Route("/phone", phone_page),
-    Route("/api/qr", api_qr), Route("/api/config", api_config),
+    Route("/api/qr", api_qr), Route("/api/config", api_config), Route("/api/setup", api_setup, methods=["POST"]),
+    Route("/api/calibrate", api_calibrate, methods=["POST"]), Route("/api/idle_noise", api_idle_noise, methods=["POST"]),
+    Route("/api/summary", api_summary), Route("/api/summary.csv", api_summary_csv),
     Route("/api/replay/{run}", api_replay, methods=["POST"]), Route("/api/stop", api_stop, methods=["POST"]),
     WebSocketRoute("/ws/phone", ws_phone), WebSocketRoute("/ws/dash", ws_dash),
     Mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static"),
