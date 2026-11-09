@@ -58,7 +58,7 @@ def track_step(g, tpl, prev_xy, search=SEARCH):
     win = g[y0:y1, x0:x1]
     if win.shape[0] < TPL or win.shape[1] < TPL:
         return None
-    res = cv2.matchTemplate(win, tpl, cv2.TM_CCOEFF_NORMED)
+    res = np.nan_to_num(cv2.matchTemplate(win, tpl, cv2.TM_CCOEFF_NORMED), nan=0.0, posinf=0.0, neginf=0.0)
     _, mx, _, loc = cv2.minMaxLoc(res)
     return np.array([x0 + loc[0] + TPL // 2, y0 + loc[1] + TPL // 2], float), float(mx)
 
