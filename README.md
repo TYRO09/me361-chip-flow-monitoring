@@ -1,6 +1,6 @@
 # ME361: Live monitoring of chip entangling (chip flow angle)
 
-**Main results:** [`results/REPORT.pdf`](results/REPORT.pdf) (iteration 2) · interactive predictor: [`results/chip_direction_predictor.html`](results/chip_direction_predictor.html) · demo videos: [`results/demo/`](results/demo/)
+**Main results:** [`results/REPORT.pdf`](results/REPORT.pdf) (iteration 2) · **live demo app:** [`app/README.md`](app/README.md) · interactive predictor: [`results/chip_direction_predictor.html`](results/chip_direction_predictor.html) · demo videos: [`results/demo/`](results/demo/)
 
 > **Not in this repository** (too large for GitHub, kept on the project laptop): the raw videos (`session_2026-11-04/videos_top`, `videos_side`, `session_2026-10_unlabeled`), extracted audio (`results/audio`), the CNN training crops (on Kaggle as the private dataset `tyro09/me361-chip-angle-frames`) and model weights (`*.pt`).
 
@@ -10,9 +10,12 @@
 Me361/
 ├── README.md                     this file
 ├── file_map.csv                  original filename → new path (nothing was deleted)
-├── docs/                         lab visit checklist (md + pdf)
+├── app/                          live demo web app: phone camera + mic -> laptop dashboard (see app/README.md)
+├── tests/                        pytest: kernel, engine replay regression, audio, server, calibration, theory
+├── docs/                         lab visit checklist (md + pdf); superpowers/ = design spec and build plan of the app
 ├── code/                         measurement, physics, analysis, model_zoo, audio_sensor,
-│                                 entangle_indicator, live_monitor_demo, process_map, crops, md→pdf
+│                                 entangle_indicator, live_monitor_demo, process_map, crops, md→pdf,
+│                                 chip_kernel (shared per-frame maths), audio_buildup_check, webapp_validation
 ├── results/                      REPORT.md/.pdf (v2; v1 kept as REPORT_v1.*), angles, figures,
 │                                 demo/ (live-monitor videos), angles_variants/ (sensitivity runs)
 ├── kaggle/                       dataset (crops + labels), kernel/ (CNN v1), kernel_v2/ (input variants), outputs

@@ -47,6 +47,13 @@ TESTED = dict(f=(0.08, 0.15), ap=(0.3, 0.9))
 DEFAULT_PARAMS = dict(d_mm=24.8, f=0.15, ap=0.6, vc=150.0, material="AISI 1020 (assumed)", r_eps=0.4)
 
 
+def _pos(v):
+    x = float(v)
+    if not math.isfinite(x) or x <= 0:
+        raise ValueError("must be a positive number")
+    return x
+
+
 def rpm_for(d_mm, vc):
     return min(2500.0, 1000.0 * vc / (math.pi * d_mm))
 
@@ -354,8 +361,10 @@ async def api_qr(request):
 
 
 async def api_config(request):
-    d = float(request.query_params.get("d", "30"))
-    vc = float(request.query_params.get("vc", "150"))
+    try:
+        d, vc = _pos(request.query_params.get("d", "30")), _pos(request.query_params.get("vc", "150"))
+    except ValueError:
+        return JSONResponse(dict(error="d and vc must be positive numbers"), status_code=422)
     return JSONResponse(dict(lan_ip=lan_ip(), phone_url=phone_url(), rpm_expected=rpm_for(d, vc),
                              runs=sorted(replay_mod.CUT), calibrated=session.calibration is not None,
                              params=session.params))
@@ -364,9 +373,12 @@ async def api_config(request):
 async def api_setup(request):
     b = await request.json()
     p = dict(DEFAULT_PARAMS)
-    for k in p:
-        if k in b:
-            p[k] = b[k] if k == "material" else float(b[k])
+    try:
+        for k in p:
+            if k in b:
+                p[k] = str(b[k])[:60] if k == "material" else _pos(b[k])
+    except (ValueError, TypeError):
+        return JSONResponse(dict(error=f"{k} must be a positive number"), status_code=422)
     session.params = p
     return JSONResponse(dict(predicted_psi=predict_psi(p["f"], p["ap"]), rpm_expected=rpm_for(p["d_mm"], p["vc"]),
                              extrapolation=extrapolating(p["f"], p["ap"]), tested=TESTED, params=p))
@@ -395,8 +407,7 @@ async def api_calibrate(request):
     n = np.array([-feed[1], feed[0]])
     out = n if np.dot(n, tip - wp) > 0 else -n                # outward = away from the workpiece
     c = tip + 70 * out - 45 * feed                            # centre of the tracking template (see ChipEngine)
-    half = 60 + 90                                            # template half-size + search radius must stay in the frame
-    if not (half <= c[0] <= w - half + 90 and half <= c[1] <= h - half + 90) or not (60 <= c[0] <= w - 60 and 60 <= c[1] <= h - 60):
+    if not (60 <= c[0] <= w - 60 and 60 <= c[1] <= h - 60):
         return JSONResponse(dict(ok=False, error="tool tip is too close to the frame edge: re-aim the phone so the tip and "
                                                  "the area around it are well inside the picture"), status_code=422)
     mm_per_px = None
@@ -416,6 +427,10 @@ async def api_calibrate(request):
 
 async def api_idle_noise(request):
     b = await request.json()
+    try:
+        d_mm, vc = _pos(b.get("d_mm", session.params["d_mm"])), _pos(b.get("vc", session.params["vc"]))
+    except (ValueError, TypeError):
+        return JSONResponse(dict(ok=False, error="d_mm and vc must be positive numbers"), status_code=422)
     if session.audio is None:
         return JSONResponse(dict(ok=False, error="microphone is off: allow microphone access on the phone"), status_code=409)
     loop = asyncio.get_running_loop()
@@ -424,7 +439,7 @@ async def api_idle_noise(request):
         return JSONResponse(dict(ok=False, error="need about 3 s of audio first"), status_code=409)
     session.idle_db = r["idle_db"]
     # the idle sound is heard before the cut, on the larger diameter (after-cut diameter + 2 ap); G96 sets rpm from it
-    expected = rpm_for(float(b.get("d_mm", session.params["d_mm"])) + 2 * session.params["ap"], float(b.get("vc", session.params["vc"])))
+    expected = rpm_for(d_mm + 2 * session.params["ap"], vc)
     ok = abs(r["rpm_detected"] - expected) / expected <= 0.05
     return JSONResponse(dict(ok=ok, warnings=[] if ok else ["rpm_mismatch"], idle_db=r["idle_db"],
                              rpm_detected=r["rpm_detected"], rpm_expected=expected))

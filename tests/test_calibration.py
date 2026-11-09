@@ -148,3 +148,23 @@ def test_summary_has_measured_and_predicted(client):
     assert s["valid_frames"] > 100 and s["alarm_t"] is None
     csv = client.get("/api/summary.csv").text
     assert csv.splitlines()[0].startswith("t,") and len(csv.splitlines()) > 100
+
+
+def test_calibrate_accepts_template_that_fits_even_close_to_the_left_edge(client):
+    ws, p = phone_with_frames(client)                 # 960 x 540 after scaling
+    try:
+        # template centre = tip + 70*out - 45*feed = (100, 270): 100 px from the edge, template (+-60) still fits
+        tip = np.array([145.0, 340.0]) / [960, 540]
+        body = dict(tip=tip.tolist(), feed_pt=(tip + [0.1, 0]).tolist(), work_pt=(tip + [0, 0.2]).tolist())
+        r = client.post("/api/calibrate", json=body)
+        assert r.status_code == 200 and r.json()["ok"], r.text
+    finally:
+        ws.__exit__(None, None, None)
+
+
+def test_setup_and_config_reject_bad_numbers(client):
+    assert client.post("/api/setup", json=dict(d_mm="abc")).status_code == 422
+    assert client.post("/api/setup", json=dict(d_mm=0)).status_code == 422
+    assert client.post("/api/setup", json=dict(f=-0.1)).status_code == 422
+    assert client.get("/api/config?d=0").status_code == 422
+    assert client.post("/api/idle_noise", json=dict(d_mm=0)).status_code in (409, 422)

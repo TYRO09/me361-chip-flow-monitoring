@@ -52,7 +52,9 @@ class ChipEngine:
         c = tip + 70 * self.out0 - 45 * self.feed0
         cx, cy = int(c[0]), int(c[1])
         g = cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY)
-        self.tpl = g[cy - TPL // 2: cy + TPL // 2, cx - TPL // 2: cx + TPL // 2].copy()
+        self.tpl = g[max(cy - TPL // 2, 0): cy + TPL // 2, max(cx - TPL // 2, 0): cx + TPL // 2].copy()
+        if cy - TPL // 2 < 0 or cx - TPL // 2 < 0 or self.tpl.shape != (TPL, TPL):
+            raise ValueError("tool tip is too close to the frame edge: the tracking template would leave the picture")
         self.off = tip - np.array([cx, cy], float)
         self.prev = (np.array(calib.start_tip, float) - self.off) if calib.start_tip is not None else np.array([cx, cy], float)
         self.buf = deque(maxlen=3)

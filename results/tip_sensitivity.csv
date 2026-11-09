@@ -1,0 +1,25 @@
+run,shift,px,median,change_deg,valid_frames
+R2,along feed,-10,61.0,-2.0,189
+R2,along feed,-5,61.0,-2.0,196
+R2,along feed,5,65.0,2.0,198
+R2,along feed,10,65.0,2.0,198
+R2,across feed,-10,65.0,2.0,198
+R2,across feed,-5,63.0,0.0,198
+R2,across feed,5,63.0,0.0,198
+R2,across feed,10,62.0,-1.0,198
+R3,along feed,-10,33.0,-7.0,185
+R3,along feed,-5,35.0,-5.0,191
+R3,along feed,5,42.0,2.0,198
+R3,along feed,10,45.0,5.0,198
+R3,across feed,-10,41.0,1.0,198
+R3,across feed,-5,37.0,-3.0,197
+R3,across feed,5,39.0,-1.0,197
+R3,across feed,10,39.0,-1.0,197
+R6,along feed,-10,45.0,-2.0,198
+R6,along feed,-5,45.0,-2.0,198
+R6,along feed,5,48.0,1.0,198
+R6,along feed,10,50.0,3.0,198
+R6,across feed,-10,49.0,2.0,198
+R6,across feed,-5,49.0,2.0,198
+R6,across feed,5,45.0,-2.0,198
+R6,across feed,10,45.0,-2.0,198

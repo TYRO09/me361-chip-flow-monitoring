@@ -92,3 +92,10 @@ def test_orientation_change_flagged():
     states = [eng.push(np.ascontiguousarray(np.rot90(b)), t) for b, t in frames[:6]]
     got = [s for s in states if s is not None]
     assert got and all(s["orientation_changed"] and not s["valid"] for s in got)
+
+
+def test_engine_rejects_a_tip_whose_template_falls_off_the_frame():
+    cal = replay.calibration_for("R1")
+    bad = type(cal)(tip=(5.0, 5.0), feed_dir=cal.feed_dir, out_dir=cal.out_dir, ref_frame=cal.ref_frame)
+    with pytest.raises(ValueError, match="edge"):
+        ChipEngine(bad)

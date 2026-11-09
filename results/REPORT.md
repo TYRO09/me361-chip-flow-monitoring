@@ -6,7 +6,8 @@ ME361 · session of 4 Nov 2026 · 6 runs · top-view phone video + its sound tra
 >
 > - the chip ejection angle, frame by frame, and it survives every robustness check;
 > - spindle speed and feed from the **sound** alone (rpm within 0.4%, feed within 2.6%);
-> - an **entanglement alarm** that fires only on the run where the chips actually tangled.
+> - an **entanglement alarm** that fires only on the run where the chips actually tangled;
+> - a **live web app** (phone camera and microphone, laptop dashboard, calibration, replay mode) that reproduces the offline angles exactly on all six runs.
 >
 > We tried 11 parameter → angle models and 5 CNN set-ups. Feeding the CNN only the *moving* pixels cut its error from 8.8° to 6.8°. With 6 runs the simple linear model is still the most honest predictor, and the textbook flow-angle theory does not predict what the camera sees.
 
@@ -27,6 +28,8 @@ ME361 · session of 4 Nov 2026 · 6 runs · top-view phone video + its sound tra
 | 11 | **Application: live-monitor dashboard video** | Everything combined, replayed in real time | ✓ `results/demo/*.mp4` |
 | 12 | **Application: process map** | Pick settings for a target chip direction | ✓ fig. 9 |
 | 13 | Inverse models (settings from video/audio) | Can the sensors tell us what the machine is doing? | Feed: audio ✓, video ✗. Depth: weak |
+| 14 | **Application: live web app** with calibration and replay | Can the pipeline run live from a phone? | ✓ Replay equals the offline angles on 6/6 runs; server latency 26 ms; real phone not yet tested |
+| 15 | **Literature check** (8 sources) | What can published work add? | Theory direction and chart axes used; the acoustic build-up cue did **not** reproduce with a phone microphone |
 
 ## 1. Data
 
@@ -283,6 +286,91 @@ The left map shows the fitted model; the right map shows what flow theory alone 
    - **Run plan:** **randomised run order.** Repeat the centre point. Vary cutting speed. Try a deliberately long-chip setting to get more tangles.
 3. **Retrain the CNN once there are ~30 runs.** The motion-input version is the one to keep (section 5).
 
+## 13. Live web application and calibration
+
+**What it is.** A laptop runs the analysis and shows a dashboard; a phone propped at the machine is only the camera and microphone (it opens a web page, there is nothing to install). The code is in `app/`; how to run it, and a rehearsal checklist, is in `app/README.md`.
+
+```
+phone (camera + mic) --https/websocket--> laptop server --> dashboard (laptop browser)
+                                   same engine <-- replay of recorded runs R1-R6
+```
+
+![Dashboard](figures/fig11_webapp.jpg)
+
+*The dashboard in replay mode (R2 after the alarm). Every number is tagged measured / our model / literature.*
+
+**The four steps on the dashboard**
+1. **Setup**: diameter, feed, depth of cut, Vc, nose radius, material. It shows the model's expected chip angle, the expected spindle speed, whether the setting is outside the six tested runs, and where it sits on a feed-vs-depth chart.
+2. **Calibration**: the phone page shows a level indicator; the user clicks the tool tip, a point toward the chuck and a point on the workpiece (these give the tip, the feed direction and which side is "outward"); optionally two ends of a known length for a scale; then records 3 s of idle sound, which must match the expected spindle speed (computed on the diameter *before* the cut, because G96 sets the speed from the current diameter).
+3. **Live**: video with tip, feed and chip arrows; the angle as a number and a trace, drawn against the model value; build-up trace; spindle speed and CUTTING/idle from the sound; alarm banner. The cut start and end come from the microphone; if the microphone is off, the cut is taken to start at the first valid frame.
+4. **Summary**: measured against predicted angle, alarm time, CSV export.
+
+**Replay mode** runs the recorded video and sound through exactly the same code, labelled REPLAY on screen. It is the fallback if the phone, the Wi-Fi or the lathe is not available.
+
+**How it was checked** (44 automated tests; the slow ones replay all six runs):
+
+| Run | Offline median ψ (°) | Live engine median ψ (°) | Valid frames offline | Valid frames live | Alarm |
+|---|---|---|---|---|---|
+| R1 | 55 | 55 | 808 | 808 | — |
+| R2 | 65 | 65 | 343 | 356 | 20.1 s |
+| R3 | 49 | 49 | 729 | 731 | — |
+| R4 | 57 | 57 | 380 | 389 | — |
+| R5 | 49 | 49 | 554 | 549 | — |
+| R6 | 53 | 53 | 328 | 328 | — |
+
+- The live engine uses only past frames (one frame of delay, about 33 ms). Its median angle per run is **identical to the offline measurement on all six runs**, and the build-up alarm fires **only on R2**, at 20.1 s as in the validated demo video.
+- **Speed:** the server needs a median of 26 ms from the arrival of a frame to the finished state (95th percentile 39 ms, 29 frames/s sustained), measured by streaming a run through the running server (`app/bench_latency.py`). The phone-to-dashboard time on a real network adds half the round-trip time, which the dashboard shows live; it was **not measured with a real phone** (see below).
+- **Calibration matters.** The angle is measured from the tool tip, so a mis-clicked tip moves it. We moved the tip by 5 and 10 px (in the 960-px-wide picture) along and across the feed direction and re-measured the first 200 frames after calibration:
+
+| Run | along feed: −10 | −5 | +5 | +10 | across feed: −10 | −5 | +5 | +10 |
+|---|---|---|---|---|---|---|---|---|
+| R2 | -2° | -2° | +2° | +2° | +2° | +0° | +0° | -1° |
+| R3 | -7° | -5° | +2° | +5° | +1° | -3° | -1° | -1° |
+| R6 | -2° | -2° | +1° | +3° | +2° | +2° | -2° | -2° |
+
+  A 5 px error moved the median angle by up to 5°, a 10 px error by up to 7°. That is the same size as the model's leave-one-run-out error (6.6°), so the tip should be clicked carefully, on a still picture, and a calibration photo with a ruler is on the next-visit list.
+- **A second, independent microphone cue for build-up did not work** (`code/audio_buildup_check.py`). Acoustic emission is known to respond to chip congestion (Dornfeld and Pan, 1985), so we tested whether the 2-6 kHz band level, or its short-term variation, rises on R2 when the chips tangle. It does not: on R2 the largest rise above the run's own first 4 s is -0.2 robust units for the level and 0.9 for the variation, against up to 1.9 and 1.2 on the five clean runs. A phone microphone hears ordinary sound; acoustic-emission sensors work at ultrasonic frequencies, so this is not a test of the published effect. The microphone therefore only gives spindle speed and cut on/off; the alarm stays video-only.
+
+**What was not validated**
+- All validation is on the **six handheld videos**. No cut has been made with the phone fixed on a stand.
+- The **phone page has not been run on a physical phone yet**. It was tested in a desktop browser, and the same message protocol was exercised with a stand-in streamer (`app/fake_phone.py`). The rehearsal checklist in `app/README.md` covers this.
+- The cut-start detection from sound was checked on the same recordings used to tune the noise margin (5.5 dB above the idle level).
+
+## 14. Related work and how it was used
+
+We looked for published work on three questions: where the chip leaves the tool, what is known about chip control and chip forms, and whether sound can tell us about chips. Only sources whose existence and main finding we could confirm are listed; for some we only had the abstract or the bibliographic record, which is stated.
+
+| Source | What it says (as far as we checked) | What we took from it |
+|---|---|---|
+| Colwell (1954) [1] | Predicts the chip-flow angle of a single-point tool; the chip flows roughly perpendicular to the chord joining the ends of the engaged cutting edge | The chord model in `code/physics_flow_angle.py`; shown on the dashboard as the rake-face flow direction |
+| Stabler (1951) [2] | Chip flow deviates from the normal to the edge by about the edge inclination angle (Stabler's rule); later work finds somewhat smaller values because of friction | Background only: our insert has no inclination angle, and the nose radius dominates |
+| Young, Mathew, Oxley (1987) [3] | Includes nose-radius effects: each element of the cutting edge pushes the chip along its own normal | The area-weighted-normals version in `physics_flow_angle.py` |
+| Jawahir and van Luttervelt (1993) [4] | The CIRP keynote summarising chip-control research | Motivation: why chip direction and chip form matter for entangling. Cited from its record; we did not review the full text |
+| Dornfeld and Pan (1985) [5] | Acoustic emission count rate follows feed-induced segmented chips and responds to chip congestion/entangling | The idea of a second, sound-based build-up cue; tested in section 13, **negative with a phone microphone** |
+| Sukvittayawong and Inasaki (1991) [6] | Chip form identified from acoustic emission with statistics, fuzzy sets and a neural network; over 90% correct in their experiments | A reference point for what a trained, high-frequency sensor can do; we have no chip-form labels to train such a classifier |
+| Kishawy et al. (2018) [7] | Review of acoustic emission in machining, including chip formation | Background for the limits of audible sound versus acoustic emission |
+| ISO 10910:1995, ISO 3685 [8] | A chip-control chart with feed and depth of cut as axes; chip-form codes with long/short/snarled sub-classes | The axes of the feed-depth chart in the app and the vocabulary "long" / "snarled" for labelling our six runs |
+
+**What this changed in our work**
+- **The theory result is now framed correctly.** The literature gives the flow direction *on the rake face*; our camera sees the chip after it has curled off the face. Across our six runs the theory runs the opposite way (r = −0.52, section 3), so the dashboard shows it as "literature: rake-face direction", not as a prediction of what the camera should read.
+- **A published cue failed on our hardware.** Acoustic emission responds to chip congestion; the audible band of a phone microphone does not show it on our one tangled run. A proper test needs an acoustic-emission or contact microphone sensor.
+- **A shared vocabulary.** We labelled the chips in our videos with the ISO 3685 sub-classes (long; snarled for R2 after about 19 s). The main chip-form codes (ribbon, tubular, helical) cannot be told reliably from 30 fps top-view video, so they are not assigned; the table is `code/observed_chip_forms.csv` and should be corrected from the collected chips.
+- **What is still missing from the literature side:** chip-breaking limits for our insert and material (the chart in the app draws no class boundaries because we have no data for them).
+
+
 ---
 
-**Code:** `code/` · **Per-frame data:** `results/frames_all.csv` · **Models:** `results/model_zoo.csv`, `results/sensitivity.csv`, `results/run_features.csv` · **Audio:** `results/audio_sensor.csv` · **Alarm:** `results/entangle_alarms.csv` · **Demo videos:** `results/demo/` · **Kaggle (private):** tyro09/me361-chip-angle-cnn, tyro09/me361-chip-angle-cnn-v2 · **Previous report:** `results/REPORT_v1.pdf`
+**Code:** `code/` · **Per-frame data:** `results/frames_all.csv` · **Models:** `results/model_zoo.csv`, `results/sensitivity.csv`, `results/run_features.csv` · **Audio:** `results/audio_sensor.csv` · **Alarm:** `results/entangle_alarms.csv` · **Demo videos:** `results/demo/` · **Kaggle (private):** tyro09/me361-chip-angle-cnn, tyro09/me361-chip-angle-cnn-v2 · **Live app:** `app/` · **Validation:** `results/live_engine_regression.csv`, `results/tip_sensitivity.csv`, `results/audio_buildup_check.csv` · **Previous report:** `results/REPORT_v1.pdf`
+
+## References
+
+1. Colwell, L. V. (1954). Predicting the angle of chip flow for single-point cutting tools. *Transactions of the ASME* 76, 199-203.
+2. Stabler, G. V. (1951). The fundamental geometry of cutting tools. *Proceedings of the Institution of Mechanical Engineers* 165.
+3. Young, H. T., Mathew, P., Oxley, P. L. B. (1987). Allowing for nose radius effects in predicting the chip flow direction and cutting forces in bar turning. *Proceedings of the Institution of Mechanical Engineers* 201. DOI: [10.1243/PIME_PROC_1987_201_108_02](https://doi.org/10.1243/PIME_PROC_1987_201_108_02) (page numbers differ between catalogues, so none are given).
+4. Jawahir, I. S., van Luttervelt, C. A. (1993). Recent developments in chip control research and applications. *Annals of the CIRP* 42(2), 659-693.
+5. Dornfeld, D. A., Pan, C. S. (1985). A study of continuous/discontinuous chip formation using acoustic emission. *Journal of Applied Metalworking* 4, 18-29. DOI: [10.1007/BF02833673](https://doi.org/10.1007/BF02833673)
+6. Sukvittayawong, S., Inasaki, I. (1991). Identification of chip form in turning process. *JSME International Journal, Series III* 34(4), 553-560. [J-STAGE](https://www.jstage.jst.go.jp/article/jsmec1988/34/4/34_4_553/_article/-char/en)
+7. Kishawy, H. A., et al. (2018). Application of acoustic emissions in machining processes: analysis and critical review. *International Journal of Advanced Manufacturing Technology*. DOI: [10.1007/s00170-018-2341-y](https://doi.org/10.1007/s00170-018-2341-y)
+8. ISO 10910:1995, *Chip control: classification chart*; ISO 3685, annex on chip-form codes (the standards were not available to us in full; their use here follows the descriptions in the sources above).
+
+The papers themselves are not bundled in this repository: most are behind publisher paywalls. The DOI links open them from a university network.

@@ -14,7 +14,7 @@ main { display:grid; grid-template-columns:minmax(300px,1.1fr) minmax(320px,1fr)
 .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:14px; }
 .card h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); margin:0 0 10px; font-weight:600; }
 .video { position:relative; background:var(--video); border-radius:10px; overflow:hidden; min-height:200px; display:flex; align-items:center; justify-content:center; }
-.video canvas { width:100%; height:auto; display:block; }
+.video canvas { width:auto; max-width:100%; height:auto; max-height:76vh; display:block; margin:0 auto; }
 .video .ph { position:absolute; color:#9a9aa1; text-align:center; padding:0 20px; }
 .alarm { border-radius:10px; padding:12px 14px; font-weight:700; background:var(--bg); color:var(--ok); border:1px solid var(--line); }
 .alarm.on { background:var(--bad); color:#fff; border-color:var(--bad); }
