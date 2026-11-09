@@ -1,0 +1,7 @@
+run,f,ap,tangled,iso3685_subclass,observed
+R1,0.08,0.9,false,1 long,"long continuous fine helical chips; some short curled fragments on the insert (from 30 fps top-view video, provisional)"
+R2,0.15,0.9,true,1 long -> 3 snarled,"long continuous chips that snarl around the tool from about 19 s (alarm fires); provisional, from video"
+R3,0.08,0.3,false,1 long,"long continuous fine helical chips (from video, provisional)"
+R4,0.15,0.3,false,1 long,"long continuous fine helical chips (from video, provisional)"
+R5,0.08,0.6,false,1 long,"long continuous fine helical chips (from video, provisional)"
+R6,0.15,0.6,false,1 long,"long continuous chip streaming off the tool as a thread-like helix (from video, provisional)"

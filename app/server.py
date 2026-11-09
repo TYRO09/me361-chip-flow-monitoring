@@ -35,6 +35,7 @@ from app import replay as replay_mod  # noqa: E402
 from app.audio_engine import AudioEngine  # noqa: E402
 from app.engine import Calibration, ChipEngine, scale_frame  # noqa: E402
 import measure_chip_angle as M  # noqa: E402
+import physics_flow_angle  # noqa: E402
 
 PORT = int(os.environ.get("APP_PORT", "8443"))
 PREVIEW_FPS = 15
@@ -429,6 +430,26 @@ async def api_idle_noise(request):
                              rpm_detected=r["rpm_detected"], rpm_expected=expected))
 
 
+async def api_theory(request):
+    """Rake-face flow direction from the literature (Colwell 1954; Young, Mathew and Oxley 1987)."""
+    q = request.query_params
+    try:
+        f, ap, r = float(q["f"]), float(q["ap"]), float(q.get("r_eps", "0.4"))
+        if min(f, ap, r) <= 0:
+            raise ValueError
+        t = physics_flow_angle.flow_angles(f, ap, r_eps=r, kappa_r=95.0, eps_r=80.0)
+    except (KeyError, ValueError):
+        return JSONResponse(dict(error="f, ap and r_eps must be positive numbers"), status_code=422)
+    # eta is measured from -z (straight back over the insert); psi from +z (feed): psi = 180 - eta
+    return JSONResponse(dict(eta_colwell=t["eta_colwell"], eta_ymo=t["eta_ymo"], psi_theory_colwell=180 - t["eta_colwell"],
+                             psi_theory_ymo=180 - t["eta_ymo"], tool=dict(r_eps=r, kappa_r=95.0, eps_r=80.0)))
+
+
+async def api_chip_forms(request):
+    d = pd.read_csv(os.path.join(os.path.dirname(HERE), "code", "observed_chip_forms.csv"))
+    return JSONResponse(dict(runs=clean(d.to_dict("records")), axes=dict(f=[0.025, 2.5], ap=[0.1, 16.0])))
+
+
 def make_summary():
     h = session.history
     valid = [r for r in h if r["valid"]]
@@ -470,6 +491,7 @@ app = Starlette(routes=[
     Route("/", index), Route("/phone", phone_page),
     Route("/api/qr", api_qr), Route("/api/config", api_config), Route("/api/setup", api_setup, methods=["POST"]),
     Route("/api/calibrate", api_calibrate, methods=["POST"]), Route("/api/idle_noise", api_idle_noise, methods=["POST"]),
+    Route("/api/theory", api_theory), Route("/api/chip_forms", api_chip_forms),
     Route("/api/summary", api_summary), Route("/api/summary.csv", api_summary_csv),
     Route("/api/replay/{run}", api_replay, methods=["POST"]), Route("/api/stop", api_stop, methods=["POST"]),
     WebSocketRoute("/ws/phone", ws_phone), WebSocketRoute("/ws/dash", ws_dash),

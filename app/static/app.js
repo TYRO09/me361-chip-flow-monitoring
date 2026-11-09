@@ -5,7 +5,7 @@
   const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
   const cv = $('cv'), g = cv.getContext('2d');
   const SPAN = 8;                                   // seconds shown in the traces
-  let img = null, last = null, histPsi = [], histScore = [], setup = null, step = 1, status = {};
+  let forms = null, img = null, last = null, histPsi = [], histScore = [], setup = null, step = 1, status = {};
   let tool = null, pts = { tip: null, feed: null, work: null, s1: null, s2: null }, applied = false, idleOk = false;
 
   const chip = (id, txt, cls) => { const e = $(id); e.textContent = txt; e.className = 'chip ' + (cls || ''); };
@@ -15,6 +15,7 @@
     $('vid-title').textContent = n === 2 ? 'Camera: click to calibrate' : 'Camera';
     $('vid-help').textContent = n === 2 ? 'Place each point with the buttons on the right.' : 'Yellow = measured chip direction · blue = feed direction · ring = tool tip';
     if (n === 4) loadSummary();
+    if (n === 1 && forms && setup) requestAnimationFrame(() => window.drawChipChart($('chart'), forms, setup.params));
     draw();
   }
 
@@ -167,6 +168,9 @@
     $('s-pred').textContent = setup.predicted_psi.toFixed(0) + '°'; $('pred').textContent = setup.predicted_psi.toFixed(0) + '°';
     $('s-rpm').textContent = setup.rpm_expected.toFixed(0) + ' rpm';
     $('s-extrap').hidden = !setup.extrapolation;
+    const th = await (await fetch(`/api/theory?f=${setup.params.f}&ap=${setup.params.ap}&r_eps=${setup.params.r_eps}`)).json();
+    $('s-theory').textContent = th.error ? '--' : `${th.psi_theory_colwell.toFixed(0)}°  (η = ${th.eta_colwell.toFixed(0)}°; Young-Mathew-Oxley ${th.psi_theory_ymo.toFixed(0)}°)`;
+    if (forms) window.drawChipChart($('chart'), forms, setup.params);
   }
   ['in-d', 'in-f', 'in-ap', 'in-vc', 'in-re', 'in-mat'].forEach(id => $(id).oninput = () => { clearTimeout(timer); timer = setTimeout(sendSetup, 200); });
   async function loadSummary() {
@@ -193,6 +197,7 @@
     document.querySelectorAll('#nav button').forEach(b => b.onclick = () => go(+b.dataset.step));
     $('to-cal').onclick = () => go(2); $('to-sum').onclick = () => go(4);
     $('stop').onclick = () => post('/api/stop');
+    forms = await (await fetch('/api/chip_forms')).json();
     await sendSetup(); refreshChecks(); go(1); connect();
   }
   init();

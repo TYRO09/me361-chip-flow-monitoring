@@ -50,7 +50,15 @@
           <div><div class="k">chip angle <span class="tag o">our model</span></div><div class="v" id="s-pred">--</div></div>
           <div><div class="k">spindle speed (G96, cap 2500)</div><div class="v" id="s-rpm">--</div></div>
         </div>
+        <div style="margin-top:10px"><div class="k">rake-face flow direction, Colwell <span class="tag l">literature</span></div>
+          <div class="v" id="s-theory">--</div>
+          <div class="small">Textbook theory gives the flow direction on the rake face (ψ = 180° − η). Across our six runs it did not predict the angle the camera sees (r = −0.52): the chip curls off the face before we see it.</div></div>
         <p id="s-extrap" class="pill" hidden>Outside the six tested settings (f 0.08-0.15, ap 0.3-0.9): the prediction is an extrapolation.</p>
+      </div>
+      <div class="card">
+        <h2>Where this setting sits <span class="tag l">ISO 10910 axes</span></h2>
+        <canvas id="chart" style="width:100%;height:240px;display:block"></canvas>
+        <div class="small">Blue = our six runs, red = the run whose chips tangled, diamond = this setting. Chip-class boundaries depend on insert and material; we have no data for them, so none are drawn.</div>
       </div>
       <div class="card">
         <h2>Next</h2>
@@ -118,6 +126,7 @@
     </div>
   </section>
 </main>
+<script src="/static/chart.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>
