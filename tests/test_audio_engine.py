@@ -87,3 +87,13 @@ def test_calibrate_idle_reports_noise_floor_and_rpm():
     assert -45 < r["idle_db"] < -36
     ref = A.f0_estimate(x[16000 * 2:16000 * 4])[0] * 60
     assert abs(r["rpm_detected"] - ref) / ref < 0.01
+
+
+def test_one_big_push_equals_many_small_pushes():
+    x = A.load("R1")[: 16000 * 12]
+    big, small = AudioEngine(16000), AudioEngine(16000)
+    big.push(x)
+    for i in range(0, len(x), CHUNK):
+        small.push(x[i:i + CHUNK])
+    assert big.state()["rpm"] == small.state()["rpm"]
+    assert abs(big.state()["band_db"] - small.state()["band_db"]) < 0.5

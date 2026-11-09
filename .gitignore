@@ -10,3 +10,4 @@ kaggle/dataset/crops/
 __pycache__/
 .DS_Store
 .superpowers/
+app/certs/

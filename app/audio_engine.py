@@ -41,6 +41,11 @@ class AudioEngine:
         self.next_tacho = WIN
 
     def push(self, pcm):
+        step = HOP * self.q                      # feed long buffers in 0.5-s pieces so every rpm window is still in the ring
+        if len(pcm) > step:
+            for i in range(0, len(pcm), step):
+                self.push(pcm[i:i + step])
+            return
         x = np.asarray(pcm, np.float64)
         if self.q > 1:
             x, self.aa_zi = signal.sosfilt(self.aa, x, zi=self.aa_zi)

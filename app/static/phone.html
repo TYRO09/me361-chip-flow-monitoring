@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chip monitor: phone</title>
+<style>
+  :root { --bg:#f6f5f2; --fg:#1d1d1f; --mut:#6b6b70; --card:#fff; --acc:#0b6bcb; --ok:#1a8a3c; --bad:#c8302b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141416; --fg:#f2f2f4; --mut:#9a9aa1; --card:#202024; --acc:#4da3ff; --ok:#4cc16a; --bad:#ff6b63; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.4 system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--fg); padding:16px; }
+  h1 { font-size:20px; margin:4px 0 12px; }
+  .card { background:var(--card); border-radius:14px; padding:14px; margin-bottom:12px; }
+  button { font:inherit; font-weight:600; padding:14px 18px; width:100%; border:0; border-radius:12px; background:var(--acc); color:#fff; }
+  button.stop { background:var(--bad); }
+  video { width:100%; border-radius:12px; background:#000; display:block; }
+  .row { display:flex; justify-content:space-between; padding:4px 0; color:var(--mut); }
+  .row b { color:var(--fg); font-weight:600; }
+  .ok { color:var(--ok) !important; } .bad { color:var(--bad) !important; }
+  #msg { color:var(--bad); min-height:1.4em; }
+</style>
+</head>
+<body>
+<h1>Chip monitor: phone camera</h1>
+<div class="card">
+  <video id="v" playsinline muted></video>
+</div>
+<div class="card">
+  <div class="row">Link to laptop <b id="s-link">not started</b></div>
+  <div class="row">Camera <b id="s-cam">off</b></div>
+  <div class="row">Microphone <b id="s-mic">off</b></div>
+  <div class="row">Frames sent <b id="s-fps">0 fps</b></div>
+  <div class="row">Tilt (level it) <b id="s-tilt">n/a</b></div>
+  <div id="msg"></div>
+</div>
+<button id="go">Start camera and microphone</button>
+<p style="color:var(--mut);font-size:14px">Prop the phone on a stand, tool tip in view, then tap start. Keep the screen on. Landscape or portrait both work, but do not rotate it after calibration.</p>
+<script src="/static/phone.js"></script>
+</body>
+</html>

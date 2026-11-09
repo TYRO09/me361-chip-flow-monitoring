@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chip flow monitor</title>
+<link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+<header>
+  <h1>Chip flow monitor</h1>
+  <span id="b-replay" class="badge-replay" hidden>REPLAY: recorded run</span>
+  <span id="c-phone" class="chip">phone: none</span>
+  <span id="c-mic" class="chip">mic: off</span>
+  <span id="c-fps" class="chip">0 fps</span>
+  <span id="c-lat" class="chip">latency: n/a</span>
+  <span id="c-cal" class="chip">not calibrated</span>
+</header>
+<main>
+  <section>
+    <div class="card">
+      <h2>Camera</h2>
+      <div class="video"><canvas id="cv" width="540" height="960"></canvas><div class="ph" id="ph">No video yet. Open the phone page (scan the code) or start a replay.</div></div>
+      <p class="small">Yellow = measured chip direction · blue = feed direction · ring = tool tip</p>
+    </div>
+  </section>
+  <section>
+    <div class="card" id="live">
+      <h2>Chip angle <span class="tag m">measured</span></h2>
+      <div class="grid2">
+        <div><div class="big" id="psi">--</div><div class="k">degrees from the feed direction</div></div>
+        <div><div class="k">our model <span class="tag o">our model</span></div><div class="v" id="pred">--</div>
+             <div class="k" style="margin-top:6px">theory (Colwell) <span class="tag l">literature</span></div><div class="v" id="theory">--</div></div>
+      </div>
+      <canvas class="trace" id="tr-psi"></canvas>
+    </div>
+    <div class="card">
+      <h2>Spindle and cutting <span class="tag m">measured (microphone)</span></h2>
+      <div class="grid2"><div><div class="k">spindle speed</div><div class="v" id="rpm">--</div></div>
+        <div><div class="k">state</div><div class="v" id="cut">--</div></div></div>
+    </div>
+    <div class="card">
+      <h2>Chip build-up score <span class="tag m">measured (video)</span></h2>
+      <canvas class="trace" id="tr-score"></canvas>
+      <div class="alarm" id="alarm">chip flow normal</div>
+    </div>
+    <div class="card">
+      <h2>Connect a phone or replay a recorded run</h2>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+        <img class="qr" id="qr" alt="QR code for the phone page">
+        <div>
+          <div class="small" id="url">phone page</div>
+          <div class="small" style="margin:8px 0">Replay runs the recorded video and audio through the same pipeline:</div>
+          <div class="runs" id="runs"></div>
+          <div style="margin-top:8px"><button id="stop">Stop</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>
