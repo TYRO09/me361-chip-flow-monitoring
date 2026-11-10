@@ -1,5 +1,17 @@
 {
-  "title": "ME361 chip ejection angle frames",
-  "id": "tyro09/me361-chip-angle-frames",
-  "licenses": [{"name": "CC0-1.0"}]
+ "title": "ME361 chip ejection angle frames",
+ "id": "tyro09/me361-chip-angle-frames",
+ "subtitle": "2,336 tip-centred turning frames with measured chip ejection angle (6 runs)",
+ "description": "Tip-centred frames from six CNC turning runs, labelled with the chip ejection angle measured from the video.\n\n**What is in it**\n- `crops/`: 2,336 images (224 x 224 px JPEG), one per video frame during the steady part of a cut. Each crop is centred on the tool tip and rotated so that the feed direction points right and radially outward points up.\n- `labels.csv`: one row per image.\n\n| column | meaning |\n|---|---|\n| `file` | image path, e.g. `crops/R1_010.033.jpg` |\n| `run` | run id R1 to R6 |\n| `t` | time in the source video (s) |\n| `psi` | chip ejection angle (degrees, 0 = along the feed direction, 90 = radially outward), 0.5 s rolling median |\n| `psi_raw` | the same angle for this single frame, before smoothing |\n| `feed` | feed (mm/rev): 0.08 or 0.15 |\n| `ap` | depth of cut (mm): 0.3, 0.6 or 0.9 |\n\n**How the labels were made.** The angle comes from a hand-written computer-vision measurement (frame differencing around the tracked tool tip), not from a human annotator or a sensor, so it is a measurement with its own error, not ground truth.\n\n**Setup.** OD turning on a FANUC 0i Mate-TD lathe, constant cutting speed 150 m/min, one insert (code not recorded), mild steel (grade not recorded), top-view phone video at 30 fps. Six runs: feed 0.08 / 0.15 mm/rev crossed with depth of cut 0.9 / 0.3 / 0.6 mm.\n\n**Limits.** Six runs only, one tool and one material, so neighbouring frames of a run are almost identical. Always split by run (leave-one-run-out), never by frame. A CNN trained on the plain images learned to recognise which clip a frame came from rather than the chip direction; showing it only the moving pixels helped (run-level error 6.8 degrees against 8.8 degrees for plain RGB, with a baseline of 8.7 degrees).\n\nPart of a university project (ME361, live monitoring of chip entangling).",
+ "licenses": [
+  {
+   "name": "CC0-1.0"
+  }
+ ],
+ "isPrivate": false,
+ "keywords": [
+  "manufacturing",
+  "computer vision",
+  "image"
+ ]
 }

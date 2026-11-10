@@ -1,0 +1,12 @@
+data,samples,model,loro_run_rmse,loro_same_target_6_means,random_split_run_rmse,baseline_same_target
+6 run means,6,linear f+ap,6.56,6.56,,7.94
+6 run means,6,random forest f+ap,8.05,8.05,,7.94
+2-s windows,44,linear f+ap,4.57,5.1,2.95,7.91
+2-s windows,44,random forest f+ap,5.01,8.02,2.74,7.91
+2-s windows,44,boosting f+ap+time,4.11,,1.34,7.91
+1-s windows,87,linear f+ap,5.27,5.89,3.31,8.0
+1-s windows,87,random forest f+ap,5.71,8.12,0.48,8.0
+1-s windows,87,boosting f+ap+time,3.88,,1.3,8.0
+single frames,2336,linear f+ap,5.97,6.56,3.55,7.94
+single frames,2336,random forest f+ap,7.03,8.05,0.05,7.94
+single frames,2336,boosting f+ap+time,4.91,,1.16,7.94

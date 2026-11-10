@@ -1,8 +1,8 @@
 # ME361: Live monitoring of chip entangling (chip flow angle)
 
-**Main results:** [`results/REPORT.pdf`](results/REPORT.pdf) (iteration 2) · **live demo app:** [`app/README.md`](app/README.md) · interactive predictor: [`results/chip_direction_predictor.html`](results/chip_direction_predictor.html) · demo videos: [`results/demo/`](results/demo/)
+**Paper (for the professor, iteration 3):** [`results/paper/paper.pdf`](results/paper/paper.pdf) · **lab-notebook report:** [`results/REPORT.pdf`](results/REPORT.pdf) (iteration 2) · **live demo app:** [`app/README.md`](app/README.md) · interactive predictor: [`results/chip_direction_predictor.html`](results/chip_direction_predictor.html) · demo videos: [`results/demo/`](results/demo/)
 
-> **Not in this repository** (too large for GitHub, kept on the project laptop): the raw videos (`session_2026-11-04/videos_top`, `videos_side`, `session_2026-10_unlabeled`), extracted audio (`results/audio`), the CNN training crops (on Kaggle as the private dataset `tyro09/me361-chip-angle-frames`) and model weights (`*.pt`).
+> **Not in this repository** (too large for GitHub, kept on the project laptop): the raw videos (`session_2026-11-04/videos_top`, `videos_side`, `session_2026-10_unlabeled`), extracted audio (`results/audio`), the CNN training crops (on Kaggle as the public dataset `tyro09/me361-chip-angle-frames`) and model weights (`*.pt`).
 
 ## Folder layout
 
@@ -15,8 +15,10 @@ Me361/
 ├── docs/                         lab visit checklist (md + pdf); superpowers/ = design spec and build plan of the app
 ├── code/                         measurement, physics, analysis, model_zoo, audio_sensor,
 │                                 entangle_indicator, live_monitor_demo, process_map, crops, md→pdf,
-│                                 chip_kernel (shared per-frame maths), audio_buildup_check, webapp_validation
-├── results/                      REPORT.md/.pdf (v2; v1 kept as REPORT_v1.*), angles, figures,
+│                                 chip_kernel (shared per-frame maths), audio_buildup_check, webapp_validation,
+│                                 iteration 3: rake_face_flow (chip on the rake face), cnn_v3_local (rotation
+│                                 augmentation, clips), augment_and_leakage, old_clips (Oct footage), paper_figures
+├── results/                      paper/ (two-column paper, LaTeX), REPORT.md/.pdf (v2; v1 kept as REPORT_v1.*), angles, figures,
 │                                 demo/ (live-monitor videos), angles_variants/ (sensitivity runs)
 ├── kaggle/                       dataset (crops + labels), kernel/ (CNN v1), kernel_v2/ (input variants), outputs
 ├── session_2026-11-04/           6 labelled runs (the real dataset)
@@ -55,7 +57,7 @@ File names follow `R<run>_f<feed mm/rev>_ap<depth of cut mm>_<view>`, e.g. `R2_f
 
 ## Still missing (fill in `runs.csv` when you have it)
 - [ ] Material grade (only "MS / mild steel" known)
-- [ ] Insert ISO code + nose radius, holder code (entering angle)
+- [ ] Insert ISO code + nose radius, holder code (entering angle). The rake-face measurement suggests r_eps ≈ 0.8–1.2 mm, not the assumed 0.4 mm: photograph the insert
 - [ ] Machine make/model (controller is FANUC 0i Mate-TD)
 - [ ] Coolant (looks dry)
 - [ ] Chip thickness per run (you have the chips: measure with a micrometer)
