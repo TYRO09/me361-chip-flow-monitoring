@@ -9,3 +9,5 @@ kaggle/dataset/crops/
 *.print.html
 __pycache__/
 .DS_Store
+# uploaded clips and their analysis (app.py "Analyze a new video")
+uploads/

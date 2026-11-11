@@ -60,21 +60,41 @@ def main(run="R2", t_a=None, t_b=None):
     f, ap = runs.loc[run, "feed_mm_per_rev"], runs.loc[run, "depth_of_cut_mm"]
     psi_pred = 26.8 + 101 * f + 17.7 * ap                       # M1 model prediction for these settings
     fr = pd.read_csv(os.path.join(RES, "angles", f"{run}_frames.csv"))
-    fr["psi_disp"] = fr.psi_peak.where(fr.valid == 1).rolling(15, min_periods=3).median()   # causal 0.5 s
     ent = pd.read_csv(os.path.join(RES, "angles", f"{run}_entangle.csv"))
-    ent["score_c"] = ent.score.rolling(30, min_periods=10).median()                         # causal 1 s
-    x = A.load(run); th = A.tacho(x); te, ee = A.cut_envelope(x)
-    lo, hi = np.percentile(ee, 10), np.percentile(ee, 90); cutting = ee > (lo + hi) / 2
     au = pd.read_csv(os.path.join(RES, "audio_sensor.csv")).set_index("run")
     t_a = t_a if t_a is not None else max(0, au.loc[run, "cut_start_s"] - 2)
     t_b = t_b if t_b is not None else au.loc[run, "cut_end_s"] + 1
-
     src = [v for v in os.listdir(VID) if v.startswith(run + "_")][0]
-    cap = cv2.VideoCapture(os.path.join(VID, src)); fps = cap.get(cv2.CAP_PROP_FPS)
     os.makedirs(os.path.join(RES, "demo"), exist_ok=True)
     out = os.path.join(RES, "demo", f"{run}_live_monitor.mp4")
+    alarm_t = render_dashboard(os.path.join(VID, src), out, fr, ent, A.load(run), t_a, t_b,
+                               f"{run}   f = {f} mm/rev   ap = {ap} mm   Vc = 150 m/min", psi_pred)
+    print(out, "alarm at", alarm_t)
+
+
+def render_dashboard(video, out, fr, ent, audio, t_a, t_b, subtitle="", psi_pred=None, progress=None):
+    """Write the side-by-side monitor video for video[t_a..t_b] to out (mp4).
+    fr: per-frame table from measure_chip_angle; ent: scored table from entangle_indicator.score_frames
+    (may be empty); audio: 16 kHz mono float32 samples of the clip, or None (then the cut state is taken
+    as 'cutting' and no rpm is shown). Works for portrait and landscape clips. Returns the alarm time or None."""
+    fr = fr.copy(); ent = ent.copy()
+    fr["psi_disp"] = fr.psi_peak.where(fr.valid == 1).rolling(15, min_periods=3).median()   # causal 0.5 s
+    if len(ent):
+        ent["score_c"] = ent.score.rolling(30, min_periods=10).median()                     # causal 1 s
+    if audio is not None and len(audio) > 3 * A.SR:
+        th = A.tacho(audio); te, ee = A.cut_envelope(audio)
+        lo, hi = np.percentile(ee, 10), np.percentile(ee, 90); cutting = ee > (lo + hi) / 2
+    else:
+        th, cutting = None, None
+
+    cap = cv2.VideoCapture(video); fps = cap.get(cv2.CAP_PROP_FPS)
+    ok, im = cap.read()
+    if not ok:
+        raise FileNotFoundError(f"cannot read {video}")
+    s = 960 / max(im.shape[:2])
+    w_left = int(round(im.shape[1] * s)); w_left += w_left % 2       # libx264 needs even sizes
     ff = subprocess.Popen([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "bgr24",
-                           "-s", f"{540 + W_PANEL}x{H}", "-r", f"{fps:.3f}", "-i", "-", "-ss", f"{t_a:.3f}", "-i", os.path.join(VID, src),
+                           "-s", f"{w_left + W_PANEL}x{H}", "-r", f"{fps:.3f}", "-i", "-", "-ss", f"{t_a:.3f}", "-i", video,
                            "-map", "0:v", "-map", "1:a:0?", "-shortest", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "23",
                            "-c:a", "aac", out], stdin=subprocess.PIPE)
     cap.set(cv2.CAP_PROP_POS_MSEC, t_a * 1000)
@@ -85,10 +105,16 @@ def main(run="R2", t_a=None, t_b=None):
         t = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000 - 1 / fps
         if not ok or t > t_b:
             break
-        s = 960 / max(im.shape[:2]); im = cv2.resize(im, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
-        im = cv2.copyMakeBorder(im, 0, H - im.shape[0], 0, 540 - im.shape[1], cv2.BORDER_CONSTANT, value=DARK)
+        if progress:
+            progress(min(1.0, max(0.0, (t - t_a) / max(t_b - t_a, 1e-6))))
+        im = cv2.resize(im, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
+        im = cv2.copyMakeBorder(im[:H, :w_left], 0, max(0, H - im.shape[0]), 0, max(0, w_left - im.shape[1]),
+                                cv2.BORDER_CONSTANT, value=DARK)
         k = int(np.argmin(np.abs(fr.t.values - t))); row = fr.iloc[k]
-        ci = min(int(t / 0.05), len(cutting) - 1); cut_now = bool(cutting[ci])
+        if cutting is not None:
+            ci = min(int(t / 0.05), len(cutting) - 1); cut_now = bool(cutting[ci])
+        else:
+            cut_now = True
         psi_now = row.psi_disp if (abs(row.t - t) < 0.05 and cut_now) else np.nan
         if abs(row.t - t) < 0.05 and row.valid == 1 and cut_now and not np.isnan(row.tip_x):
             tip = np.array([row.tip_x, row.tip_y]); uf, uo = vec(row.u_f), vec(row.u_o)
@@ -101,21 +127,25 @@ def main(run="R2", t_a=None, t_b=None):
         # ---------------- dashboard ----------------
         p = np.full((H, W_PANEL, 3), DARK, np.uint8)
         put(p, "CHIP FLOW MONITOR", (20, 40), 0.85, FG, 2)
-        put(p, f"{run}   f = {f} mm/rev   ap = {ap} mm   Vc = 150 m/min", (20, 70), 0.5, (190, 190, 190))
+        put(p, subtitle, (20, 70), 0.5, (190, 190, 190))
         put(p, f"t = {t:5.1f} s", (W_PANEL - 120, 40), 0.55, (190, 190, 190))
         dial(p, 60, 300, 190, psi_now, psi_pred)
         put(p, "chip angle", (270, 140), 0.55, (190, 190, 190))
         put(p, "--" if np.isnan(psi_now) else f"{psi_now:4.0f} deg", (270, 190), 1.3, ACC, 3)
-        put(p, f"model predicts {psi_pred:.0f} deg", (270, 225), 0.5, (200, 120, 255))
-        ti = int(np.argmin(np.abs(th[:, 0] - t))); rpm = th[ti, 1]
-        put(p, "from the microphone", (20, 360), 0.5, (170, 170, 170))
-        put(p, f"spindle  {rpm:5.0f} rpm", (20, 395), 0.75, FG, 2)
-        put(p, "CUTTING" if cut_now else "not cutting", (300, 395), 0.75, OK_C if cut_now else (150, 150, 150), 2)
+        if psi_pred is not None:
+            put(p, f"model predicts {psi_pred:.0f} deg", (270, 225), 0.5, (200, 120, 255))
+        if th is not None:                       # microphone section only when the sound was analysed
+            put(p, "from the microphone", (20, 360), 0.5, (170, 170, 170))
+            ti = int(np.argmin(np.abs(th[:, 0] - t))); rpm = th[ti, 1]
+            put(p, f"spindle  {rpm:5.0f} rpm", (20, 395), 0.75, FG, 2)
+            put(p, "CUTTING" if cut_now else "not cutting", (300, 395), 0.75, OK_C if cut_now else (150, 150, 150), 2)
         put(p, "chip angle, last 8 s (deg)", (20, 445), 0.5, (170, 170, 170))
         trace(p, 20, 455, W_PANEL - 40, 150, fr.t.values, fr.psi_disp.values, t, 8, 0, 100, ACC, ref=psi_pred)
         put(p, "chip build-up score, last 8 s", (20, 640), 0.5, (170, 170, 170))
-        ei = int(np.argmin(np.abs(ent.t.values - t))); sc = ent.score_c.values[ei] if abs(ent.t.values[ei] - t) < 0.05 else np.nan
-        trace(p, 20, 650, W_PANEL - 40, 120, ent.t.values, ent.score_c.values, t, 8, -2, 5, (90, 200, 250), ref=3.0, ref_col=(60, 60, 230))
+        sc = np.nan
+        if len(ent):
+            ei = int(np.argmin(np.abs(ent.t.values - t))); sc = ent.score_c.values[ei] if abs(ent.t.values[ei] - t) < 0.05 else np.nan
+            trace(p, 20, 650, W_PANEL - 40, 120, ent.t.values, ent.score_c.values, t, 8, -2, 5, (90, 200, 250), ref=3.0, ref_col=(60, 60, 230))
         if not np.isnan(sc):
             run_len = run_len + 1 if sc > 3 else 0
             if run_len >= 30 and not alarm_on:
@@ -124,14 +154,14 @@ def main(run="R2", t_a=None, t_b=None):
             cv2.rectangle(p, (20, 800), (W_PANEL - 20, 880), BAD, -1)
             put(p, "ALARM: CHIP BUILD-UP / TANGLE", (35, 835), 0.7, (255, 255, 255), 2)
             put(p, f"since t = {alarm_t:.1f} s - stop and clear chips", (35, 865), 0.5, (255, 255, 255))
-            cv2.rectangle(im, (2, 2), (537, H - 3), BAD, 6)
+            cv2.rectangle(im, (2, 2), (w_left - 3, H - 3), BAD, 6)
         else:
             cv2.rectangle(p, (20, 800), (W_PANEL - 20, 880), (45, 70, 45), -1)
             put(p, "chip flow normal", (35, 848), 0.7, OK_C, 2)
         put(p, "yellow arrow = chip direction (thin: raw frame), blue = feed", (20, 920), 0.42, (150, 150, 150))
         ff.stdin.write(np.hstack([im, p]).tobytes())
     ff.stdin.close(); ff.wait(); cap.release()
-    print(out, "alarm at", alarm_t)
+    return alarm_t
 
 
 if __name__ == "__main__":

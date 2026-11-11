@@ -24,7 +24,12 @@ BASE_S, THR, HOLD_S = 4.0, 3.0, 1.0
 
 def score_run(r):
     d = pd.read_csv(os.path.join(RES, "angles", f"{r}_frames.csv"))
-    t0, t1 = CUT[r]
+    return score_frames(d, *CUT[r])
+
+
+def score_frames(d, t0, t1):
+    """Build-up score for a per-frame table (output of measure_chip_angle) over the cut t0..t1 (s).
+    Returns (scored frames, alarm time in s or None)."""
     d = d[(d.valid == 1) & (d.t >= t0) & (d.t <= t1)].copy()
     d["log_act"] = np.log(d.activity + 1)
     base = d[d.t < t0 + BASE_S]

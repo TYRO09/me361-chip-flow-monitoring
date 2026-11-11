@@ -71,7 +71,7 @@ def axis_angle(gray, tip, ref_deg):
     if lines is None:
         return None
     angs, wts = [], []
-    for x1, y1, x2, y2 in lines[:, 0]:
+    for x1, y1, x2, y2 in lines.reshape(-1, 4):  # OpenCV 4 returns (N,1,4), OpenCV 5 returns (N,4)
         a = math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180
         d = (a - ref_deg + 90) % 180 - 90
         if abs(d) < 15:
@@ -115,11 +115,18 @@ def shift(img, dx, dy):
     return cv2.warpAffine(img, M, (img.shape[1], img.shape[0]), borderMode=cv2.BORDER_REPLICATE)
 
 
-def measure_run(rid, cfg, save_overlays=6):
-    path = os.path.join(SESSION, "videos_top", cfg["file"])
+def measure_run(rid, cfg, save_overlays=6, video_path=None, out_dir=None, progress=None):
+    """Measure one clip. cfg holds ref_t, tip, feed, out, window (and file, used when video_path is None).
+    out_dir: where overlay images go (default OUT). progress: optional callback(fraction 0..1)."""
+    path = video_path or os.path.join(SESSION, "videos_top", cfg["file"])
+    out_dir = out_dir or OUT
     t0, t1 = cfg["window"]
     frames, times, fps = load_frames(path, t0, t1)
+    if not frames:
+        raise FileNotFoundError(f"no frames read from {path} (missing file or window {t0}-{t1} s outside the clip)")
     ref_idx = int(round((cfg["ref_t"] - t0) * fps))
+    if not 0 <= ref_idx < len(frames):
+        raise ValueError(f"reference time {cfg['ref_t']} s is outside the analysis window {t0}-{t1} s")
     feed0, out0 = np.array(cfg["feed"], float), np.array(cfg["out"], float)
     ref_axis = math.degrees(math.atan2(feed0[1], feed0[0])) % 180
     tpl_center = np.array(cfg["tip"]) + 70 * out0 - 45 * feed0
@@ -129,9 +136,11 @@ def measure_run(rid, cfg, save_overlays=6):
     h, w = g[0].shape
     yy, xx = np.mgrid[0:h, 0:w]
     rows = []
-    os.makedirs(os.path.join(OUT, "overlays"), exist_ok=True)
+    os.makedirs(os.path.join(out_dir, "overlays"), exist_ok=True)
     overlay_idx = set(np.linspace(1, len(frames) - 2, save_overlays).astype(int)) if save_overlays else set()
     for i in range(1, len(frames) - 1):
+        if progress and i % 15 == 0:
+            progress(i / (len(frames) - 1))
         if any(tips[j] is None for j in (i - 1, i, i + 1)) or min(score[i - 1:i + 2]) < 0.5:
             rows.append(dict(run=rid, t=round(times[i], 3), valid=0)); continue
         tip = tips[i]
@@ -191,8 +200,19 @@ def measure_run(rid, cfg, save_overlays=6):
             d = math.cos(math.radians(peak)) * u_f + math.sin(math.radians(peak)) * u_o
             cv2.arrowedLine(ov, p, tuple(int(v) for v in tip + 200 * d), (0, 255, 0), 3)
             cv2.putText(ov, f"{rid} t={times[i]:.1f}s psi={peak:.0f} deg", (10, 30), 0, 0.8, (0, 255, 255), 2)
-            cv2.imwrite(os.path.join(OUT, "overlays", f"{rid}_t{times[i]:05.1f}.jpg"), ov)
+            cv2.imwrite(os.path.join(out_dir, "overlays", f"{rid}_t{times[i]:05.1f}.jpg"), ov)
     return rows
+
+
+FRAME_KEYS = ["run", "t", "valid", "psi_peak", "psi_mean", "psi_streak", "coherence", "spread", "reach", "clutter",
+              "n_px", "activity", "track", "axis_rot", "tip_x", "tip_y", "u_f", "u_o"]
+
+
+def write_frames_csv(rows, path):
+    with open(path, "w", newline="") as fh:
+        wr = csv.DictWriter(fh, fieldnames=FRAME_KEYS); wr.writeheader()
+        for r in rows:
+            wr.writerow({k: (json.dumps(r[k]) if isinstance(r.get(k), list) else r.get(k, "")) for k in FRAME_KEYS})
 
 
 if __name__ == "__main__":
@@ -210,12 +230,7 @@ if __name__ == "__main__":
     which = args.runs or list(RUNS)
     for rid in which:
         rows = measure_run(rid, RUNS[rid], save_overlays=0 if args.tag else 6)
-        keys = ["run", "t", "valid", "psi_peak", "psi_mean", "psi_streak", "coherence", "spread", "reach", "clutter",
-                "n_px", "activity", "track", "axis_rot", "tip_x", "tip_y", "u_f", "u_o"]
-        with open(os.path.join(OUT, f"{rid}_frames.csv"), "w", newline="") as fh:
-            wr = csv.DictWriter(fh, fieldnames=keys); wr.writeheader()
-            for r in rows:
-                wr.writerow({k: (json.dumps(r[k]) if isinstance(r.get(k), list) else r.get(k, "")) for k in keys})
+        write_frames_csv(rows, os.path.join(OUT, f"{rid}_frames.csv"))
         v = [r for r in rows if r.get("valid")]
         pk = np.array([r["psi_peak"] for r in v]) if v else np.array([np.nan])
         print(f"{rid}: frames={len(rows)} valid={len(v)} psi median={np.nanmedian(pk):.1f} IQR=({np.nanpercentile(pk,25):.1f},{np.nanpercentile(pk,75):.1f})")
